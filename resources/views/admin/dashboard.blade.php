@@ -544,7 +544,7 @@
                                 <div class="request-card-detail">
                                     <i class="fas fa-briefcase"></i>
                                     <strong>{{ $shift->shift->shift_name }}</strong>
-                                </div>
+                                 </div>
                                 <div class="request-card-detail">
                                     <i class="fas fa-calendar"></i>
                                     <span>{{ $shift->shift_date->format('M d, Y') }}</span>

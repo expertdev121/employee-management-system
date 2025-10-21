@@ -617,7 +617,7 @@ class AdminController extends Controller
         ];
 
         return view('admin.settings.index', compact('settings'));
-    }
+    } 
 
     public function updateSettings(Request $request)
     {
