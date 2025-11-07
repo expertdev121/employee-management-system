@@ -423,36 +423,16 @@
         <p>This Month Hours</p>
     </div>
     <div class="stats-card">
-        <h3>{{ $attendanceLogs->where('status', 'present')->count() }}</h3>
-        <p>Present Days</p>
+        <h3>{{ $acceptedShifts->count() }}</h3>
+        <p>Accepted Shifts</p>
     </div>
     <div class="stats-card">
-        <h3>{{ $attendanceLogs->where('status', 'absent')->count() }}</h3>
-        <p>Absent Days</p>
+        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfMonth())->count() }}</h3>
+        <p>This Month Shifts</p>
     </div>
     <div class="stats-card">
-        <h3>{{ $attendanceLogs->where('is_overtime', true)->count() }}</h3>
-        <p>Overtime Days</p>
-    </div>
-</div>
-
-<!-- Clock In/Out and Break Controls -->
-<div class="dashboard-card" style="margin-bottom: 2rem;">
-    <div class="card-body" style="padding: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h4 style="margin: 0; color: #1f2937; font-weight: 600;">Today's Attendance</h4>
-            <div id="currentTime" style="font-size: 0.875rem; color: #6b7280; font-weight: 500;"></div>
-        </div>
-        <div id="breakTimer" style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; color: #92400e; font-weight: 500;">
-            <i class="fas fa-coffee" style="margin-right: 0.5rem;"></i>
-            <span id="breakTimeDisplay">00:00:00</span>
-        </div>
-        <div id="attendanceControls" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-            <!-- Controls will be populated by JavaScript -->
-        </div>
-        <div id="attendanceStatus" style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid var(--primary);">
-            <!-- Status will be shown here -->
-        </div>
+        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfWeek())->count() }}</h3>
+        <p>This Week Shifts</p>
     </div>
 </div>
 
@@ -462,60 +442,55 @@
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Login Time</th>
-                        <th>Logout Time</th>
-                        <th>Total Hours</th>
-                        <th>Break Duration</th>
+                        <th>Shift Date</th>
+                        <th>Shift Name</th>
+                        <th>Shift Time</th>
+                        <th>Hours Worked</th>
                         <th>Status</th>
-                        <th>Overtime</th>
+                        <th>Accepted At</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($attendanceLogs as $log)
+                    @forelse($acceptedShifts as $shift)
                     <tr>
                         <td>
                             <div class="attendance-date">
-                                <span class="attendance-date-main">{{ $log->attendance_date->format('M d, Y') }}</span>
-                                <span class="attendance-date-day">{{ $log->attendance_date->format('l') }}</span>
+                                <span class="attendance-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
+                                <span class="attendance-date-day">{{ $shift->shift_date->format('l') }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 500; color: #1f2937;">
+                                {{ $shift->shift->shift_name }}
                             </div>
                         </td>
                         <td>
                             <div class="time-display">
-                                <i class="fas fa-sign-in-alt"></i>
-                                <span>{{ $log->login_time ? $log->login_time->format('H:i') : 'N/A' }}</span>
+                                <i class="fas fa-clock"></i>
+                                <span>{{ $shift->shift->start_time->format('H:i') }} - {{ $shift->shift->end_time->format('H:i') }}</span>
                             </div>
                         </td>
                         <td>
-                            <div class="time-display">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>{{ $log->logout_time ? $log->logout_time->format('H:i') : 'N/A' }}</span>
-                            </div>
+                            <span class="hours-display">{{ $shift->attendanceLog ? number_format($shift->attendanceLog->total_hours, 2) : 'Pending' }}</span>
                         </td>
                         <td>
-                            <span class="hours-display">{{ $log->total_hours ? number_format($log->total_hours, 2) : 'N/A' }}</span>
-                        </td>
-                        <td>{{ $log->break_duration_minutes ? $log->break_duration_minutes . ' min' : 'N/A' }}</td>
-                        <td>
-                            <span class="badge-custom badge-{{ $log->status === 'present' ? 'success' : ($log->status === 'absent' ? 'danger' : 'warning') }}">
-                                {{ ucfirst($log->status) }}
+                            <span class="badge-custom badge-success">
+                                Accepted
                             </span>
                         </td>
                         <td>
-                            @if($log->is_overtime)
-                            <span class="badge-custom badge-info">{{ number_format($log->overtime_hours, 2) }}h</span>
-                            @else
-                            <span class="text-muted">-</span>
-                            @endif
+                            <div style="font-size: 0.875rem; color: #6b7280;">
+                                {{ $shift->responded_at ? $shift->responded_at->format('M d, H:i') : 'N/A' }}
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="6">
                             <div class="empty-state">
                                 <div class="empty-state-icon">📅</div>
-                                <div class="empty-state-text">No attendance records found</div>
-                                <div class="empty-state-subtext">Your attendance logs will appear here</div>
+                                <div class="empty-state-text">No accepted shifts found</div>
+                                <div class="empty-state-subtext">Your accepted shifts and hours will appear here</div>
                             </div>
                         </td>
                     </tr>
@@ -524,371 +499,13 @@
             </table>
         </div>
 
-        @if($attendanceLogs->hasPages())
+        @if($acceptedShifts->hasPages())
         <div class="pagination-wrapper">
-            {{ $attendanceLogs->links() }}
+            {{ $acceptedShifts->links() }}
         </div>
         @endif
     </div>
 </div>
 
-<!-- Break Modal -->
-<div id="breakModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-    <div class="modal-content" style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 400px; border-radius: 8px;">
-        <span class="close" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-        <h3 style="margin-top: 0; color: #1f2937;">Start Break</h3>
-        <form id="breakForm">
-            <div style="margin-bottom: 1rem;">
-                <label for="breakType" style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 600;">Break Type:</label>
-                <select id="breakType" name="break_type" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" required>
-                    <option value="short">Short Break</option>
-                    <option value="lunch">Lunch Break</option>
-                    <option value="other">Other</option>
-                </select>
-            </div>
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                <button type="button" class="btn-action btn-action-secondary" id="cancelBreak" style="background: #6b7280; border-color: #6b7280; color: white;">Cancel</button>
-                <button type="submit" class="btn-action btn-action-primary">Start Break</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const controlsDiv = document.getElementById('attendanceControls');
-    const statusDiv = document.getElementById('attendanceStatus');
-    const breakModal = document.getElementById('breakModal');
-    const breakForm = document.getElementById('breakForm');
-    const breakType = document.getElementById('breakType');
-
-    // Load current attendance status
-    loadAttendanceStatus();
-
-    // Update current time every second
-    setInterval(updateCurrentTime, 1000);
-    updateCurrentTime();
-
-    function loadAttendanceStatus() {
-        fetch('/employee/attendance/status', {
-            method: 'GET',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            updateControls(data);
-        })
-        .catch(error => {
-            console.error('Error loading status:', error);
-        });
-    }
-
-    function updateControls(data) {
-        let controlsHtml = '';
-        let statusHtml = '';
-
-        // Handle break timer visibility
-        const breakTimer = document.getElementById('breakTimer');
-        if (data.status === 'on_break' && data.break_start_timestamp) {
-            breakTimer.style.display = 'block';
-            startBreakTimer(data.break_start_timestamp);
-        } else {
-            breakTimer.style.display = 'none';
-            stopBreakTimer();
-        }
-
-        if (data.status === 'not_clocked_in') {
-            controlsHtml = '<button id="clockInBtn" class="btn-action btn-action-primary" style="background: #10b981; border-color: #10b981; color: white;"><i class="fas fa-sign-in-alt"></i> Clock In</button>';
-            statusHtml = '<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-info-circle" style="color: #6b7280;"></i><span style="color: #6b7280; font-weight: 500;">Not clocked in today</span></div>';
-        } else if (data.status === 'clocked_in') {
-            controlsHtml = `
-                <button id="startBreakBtn" class="btn-action btn-action-warning"><i class="fas fa-coffee"></i> Start Break</button>
-                <button id="clockOutBtn" class="btn-action btn-action-danger"><i class="fas fa-sign-out-alt"></i> Clock Out</button>
-            `;
-            statusHtml = `<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-check-circle" style="color: #10b981;"></i><span style="color: #10b981; font-weight: 500;">Clocked in at ${data.login_time}</span></div>`;
-        } else if (data.status === 'on_break') {
-            controlsHtml = '<button id="endBreakBtn" class="btn-action btn-action-primary"><i class="fas fa-play"></i> End Break</button>';
-            statusHtml = `<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-pause-circle" style="color: #f59e0b;"></i><span style="color: #f59e0b; font-weight: 500;">On break since ${data.break_start_time}</span></div>`;
-        } else if (data.status === 'clocked_out') {
-            statusHtml = `<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-check-circle" style="color: #6b7280;"></i><span style="color: #6b7280; font-weight: 500;">Clocked out at ${data.logout_time} (${data.total_hours} hours)</span></div>`;
-        }
-
-        controlsDiv.innerHTML = controlsHtml;
-        statusDiv.innerHTML = statusHtml;
-
-        // Attach event listeners
-        attachEventListeners();
-    }
-
-    function updateCurrentTime() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-        document.getElementById('currentTime').textContent = timeString;
-    }
-
-    function showSuccessPopup(message) {
-        showPopup(message, 'success');
-    }
-
-    function showErrorPopup(message) {
-        showPopup(message, 'error');
-    }
-
-    function showPopup(message, type) {
-        // Remove existing popup
-        const existingPopup = document.querySelector('.custom-popup');
-        if (existingPopup) {
-            existingPopup.remove();
-        }
-
-        // Create popup
-        const popup = document.createElement('div');
-        popup.className = `custom-popup ${type}`;
-        popup.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#d1fae5' : '#fee2e2'};
-            color: ${type === 'success' ? '#065f46' : '#991b1b'};
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 10000;
-            font-weight: 500;
-            max-width: 400px;
-            border-left: 4px solid ${type === 'success' ? 'var(--success)' : 'var(--danger)'};
-            animation: slideInRight 0.3s ease-out;
-        `;
-
-        popup.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-                <span>${message}</span>
-            </div>
-        `;
-
-        document.body.appendChild(popup);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (popup.parentNode) {
-                popup.style.animation = 'slideOutRight 0.3s ease-in';
-                setTimeout(() => popup.remove(), 300);
-            }
-        }, 5000);
-    }
-
-    function showConfirmationPopup(message, onConfirm) {
-        // Remove existing popup
-        const existingPopup = document.querySelector('.confirmation-popup');
-        if (existingPopup) {
-            existingPopup.remove();
-        }
-
-        // Create confirmation popup
-        const popup = document.createElement('div');
-        popup.className = 'confirmation-popup';
-        popup.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10001;
-        `;
-
-        popup.innerHTML = `
-            <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 400px; width: 90%; text-align: center;">
-                <div style="margin-bottom: 1.5rem;">
-                    <i class="fas fa-question-circle" style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;"></i>
-                    <h3 style="margin: 0 0 0.5rem 0; color: #1f2937; font-weight: 600;">Confirm Action</h3>
-                    <p style="margin: 0; color: #6b7280;">${message}</p>
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: center;">
-                    <button id="confirmBtn" class="btn-action btn-action-primary" style="background: #10b981; border-color: #10b981; color: white;">Yes, Proceed</button>
-                    <button id="cancelBtn" class="btn-action btn-action-secondary">Cancel</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(popup);
-
-        // Event listeners
-        document.getElementById('confirmBtn').addEventListener('click', function() {
-            popup.remove();
-            onConfirm();
-        });
-
-        document.getElementById('cancelBtn').addEventListener('click', function() {
-            popup.remove();
-        });
-
-        // Close on background click
-        popup.addEventListener('click', function(e) {
-            if (e.target === popup) {
-                popup.remove();
-            }
-        });
-    }
-
-    function attachEventListeners() {
-        const clockInBtn = document.getElementById('clockInBtn');
-        const clockOutBtn = document.getElementById('clockOutBtn');
-        const startBreakBtn = document.getElementById('startBreakBtn');
-        const endBreakBtn = document.getElementById('endBreakBtn');
-
-        if (clockInBtn) {
-            clockInBtn.addEventListener('click', handleClockIn);
-        }
-        if (clockOutBtn) {
-            clockOutBtn.addEventListener('click', handleClockOut);
-        }
-        if (startBreakBtn) {
-            startBreakBtn.addEventListener('click', handleStartBreak);
-        }
-        if (endBreakBtn) {
-            endBreakBtn.addEventListener('click', handleEndBreak);
-        }
-    }
-
-    function handleClockIn() {
-        fetch('/employee/attendance/clock-in', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadAttendanceStatus();
-                showSuccessPopup('Clocked in successfully!');
-            } else {
-                showErrorPopup(data.error || 'Failed to clock in');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showErrorPopup('An error occurred while clocking in');
-        });
-    }
-
-    function handleClockOut() {
-        showConfirmationPopup('Are you sure you want to clock out?', function() {
-            fetch('/employee/attendance/clock-out', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadAttendanceStatus();
-                    showSuccessPopup(`Clocked out successfully! Total hours: ${data.total_hours}, Overtime: ${data.overtime_hours}h`);
-                } else {
-                    showErrorPopup(data.error || 'Failed to clock out');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showErrorPopup('An error occurred while clocking out');
-            });
-        });
-    }
-
-    // Break modal is no longer used for start break
-
-    function handleStartBreak() {
-        fetch('/employee/attendance/start-break', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({ break_type: 'short' }) // Default to short break
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                loadAttendanceStatus();
-                showSuccessPopup('Break started successfully!');
-            } else {
-                showErrorPopup(data.error || 'Failed to start break');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showErrorPopup('An error occurred while starting break');
-        });
-    }
-
-    let breakTimerInterval;
-
-    function startBreakTimer(breakStartTime) {
-        stopBreakTimer(); // Clear any existing timer
-
-        function updateBreakTime() {
-            const now = new Date();
-            const breakStart = new Date(breakStartTime);
-
-            const diff = now - breakStart;
-            const minutesElapsed = Math.floor(diff / (1000 * 60));
-            const secondsElapsed = Math.floor((diff % (1000 * 60)) / 1000);
-
-            const timeString = `${minutesElapsed.toString().padStart(2, '0')}:${secondsElapsed.toString().padStart(2, '0')}`;
-            document.getElementById('breakTimeDisplay').textContent = timeString;
-        }
-
-        updateBreakTime(); // Update immediately
-        breakTimerInterval = setInterval(updateBreakTime, 1000);
-    }
-
-    function stopBreakTimer() {
-        if (breakTimerInterval) {
-            clearInterval(breakTimerInterval);
-            breakTimerInterval = null;
-        }
-    }
-
-    function handleEndBreak() {
-        showConfirmationPopup('Are you sure you want to end your break?', function() {
-            fetch('/employee/attendance/end-break', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    stopBreakTimer();
-                    loadAttendanceStatus();
-                    showSuccessPopup(`Break ended successfully! Duration: ${data.break_duration} minutes`);
-                } else {
-                    showErrorPopup(data.error || 'Failed to end break');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showErrorPopup('An error occurred while ending break');
-            });
-        });
-    }
-});
-</script>
 @endsection

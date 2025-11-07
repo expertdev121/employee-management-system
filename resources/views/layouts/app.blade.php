@@ -7,7 +7,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Employee Shift Management') }}</title>
+    <title>{{ config('app.name', 'EMS') }}</title>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -376,7 +376,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                  <a class="navbar-brand ms-2" href="{{ Auth::check() ? (Auth::user()->isAdmin() ? route('admin.dashboard') : route('employee.dashboard')) : url('/') }}">
-                    Employee Shift Management
+                    EMS
                 </a>
                 <div class="ms-auto">
                     @auth
@@ -434,6 +434,12 @@
                                     <span class="menu-text">Attendance</span>
                                 </a>
                             </li>
+                            <li class="menu-item">
+                                <a class="menu-link {{ request()->routeIs('admin.payroll*') ? 'active' : '' }}" href="{{ route('admin.payroll.index') }}">
+                                    <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
+                                    <span class="menu-text">Payroll</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
 
@@ -487,6 +493,12 @@
                                 <a class="menu-link {{ request()->routeIs('employee.attendance*') ? 'active' : '' }}" href="{{ route('employee.attendance.index') }}">
                                     <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
                                     <span class="menu-text">Attendance</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a class="menu-link {{ request()->routeIs('employee.payroll*') ? 'active' : '' }}" href="{{ route('employee.payroll.index') }}">
+                                    <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
+                                    <span class="menu-text">Payroll</span>
                                 </a>
                             </li>
                         </ul>

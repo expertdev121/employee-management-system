@@ -18,10 +18,27 @@ use Illuminate\Support\Facades\Auth;
 
 Auth::routes();
 Route::get('/', function () {
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->role === 'employee') {
+            return redirect()->route('employee.dashboard');
+        }
+    }
     return redirect('/login');
 });
 Route::get('/home', function () {
-    return redirect('/login');})->name('home');
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->role === 'employee') {
+            return redirect()->route('employee.dashboard');
+        }
+    }
+    return redirect('/login');
+})->name('home');
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
@@ -55,6 +72,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/attendance/{attendanceLog}', [AdminController::class, 'updateAttendance'])->name('admin.attendance.update');
     Route::delete('/admin/attendance/{attendanceLog}', [AdminController::class, 'destroyAttendance'])->name('admin.attendance.destroy');
 
+    // Payroll Routes
+    Route::get('/admin/payroll', [AdminController::class, 'payroll'])->name('admin.payroll.index');
+    Route::get('/admin/payroll/create', [AdminController::class, 'createPayroll'])->name('admin.payroll.create');
+    Route::post('/admin/payroll', [AdminController::class, 'storePayroll'])->name('admin.payroll.store');
+    Route::get('/admin/payroll/{payrollReport}', [AdminController::class, 'showPayroll'])->name('admin.payroll.show');
+    Route::get('/admin/payroll/{payrollReport}/edit', [AdminController::class, 'editPayroll'])->name('admin.payroll.edit');
+    Route::put('/admin/payroll/{payrollReport}', [AdminController::class, 'updatePayroll'])->name('admin.payroll.update');
+    Route::delete('/admin/payroll/{payrollReport}', [AdminController::class, 'destroyPayroll'])->name('admin.payroll.destroy');
+
     Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports.index');
     Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings.index');
     Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
@@ -71,11 +97,7 @@ Route::middleware(['auth', 'role:employee'])->group(function () {
     Route::post('/employee/shifts/{employeeShift}/accept', [EmployeeController::class, 'acceptShift'])->name('employee.shifts.accept');
     Route::post('/employee/shifts/{employeeShift}/reject', [EmployeeController::class, 'rejectShift'])->name('employee.shifts.reject');
     Route::get('/employee/attendance', [EmployeeController::class, 'attendance'])->name('employee.attendance.index');
-    Route::post('/employee/attendance/clock-in', [EmployeeController::class, 'clockIn'])->name('employee.clock-in');
-    Route::post('/employee/attendance/clock-out', [EmployeeController::class, 'clockOut'])->name('employee.attendance.clock-out');
-    Route::post('/employee/attendance/start-break', [EmployeeController::class, 'startBreak'])->name('employee.attendance.start-break');
-    Route::post('/employee/attendance/end-break', [EmployeeController::class, 'endBreak'])->name('employee.attendance.end-break');
-    Route::get('/employee/attendance/status', [EmployeeController::class, 'getAttendanceStatus'])->name('employee.attendance.status');
+    Route::get('/employee/payroll', [EmployeeController::class, 'payroll'])->name('employee.payroll.index');
     Route::get('/employee/requests', [EmployeeController::class, 'requests'])->name('employee.requests.index');
     Route::get('/employee/profile', [EmployeeController::class, 'profile'])->name('employee.profile.edit');
 });

@@ -57,4 +57,10 @@ class EmployeeShift extends Model
     {
         return $query->where('employee_id', $employeeId)->with('shift')->latest()->paginate($perPage);
     }
+
+    public function attendanceLog()
+    {
+        return $this->hasOne(\App\Models\AttendanceLog::class, 'employee_id', 'employee_id')
+            ->whereColumn('attendance_date', 'shift_date');
+    }
 }

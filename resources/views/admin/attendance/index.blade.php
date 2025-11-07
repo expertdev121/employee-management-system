@@ -320,7 +320,7 @@
         }
 
         .custom-table {
-            min-width: 1000px;
+            min-width: 700px;
         }
 
         .action-buttons {
@@ -350,8 +350,6 @@
                     <tr>
                         <th>Employee</th>
                         <th>Date</th>
-                        <th>Login Time</th>
-                        <th>Logout Time</th>
                         <th>Total Hours</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -394,26 +392,6 @@
                             </div>
                         </td>
                         <td>
-                            @if($log->login_time)
-                            <div class="time-cell">
-                                <i class="fas fa-sign-in-alt"></i>
-                                <span>{{ $log->login_time->format('H:i') }}</span>
-                            </div>
-                            @else
-                            <span style="color: #9ca3af;">N/A</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($log->logout_time)
-                            <div class="time-cell logout">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>{{ $log->logout_time->format('H:i') }}</span>
-                            </div>
-                            @else
-                            <span style="color: #9ca3af;">N/A</span>
-                            @endif
-                        </td>
-                        <td>
                             @if($log->total_hours)
                             <span class="hours-badge">
                                 <i class="fas fa-clock" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
@@ -451,7 +429,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="5">
                             <div class="empty-state">
                                 <div class="empty-state-icon">📋</div>
                                 <div class="empty-state-text">No attendance records found</div>
