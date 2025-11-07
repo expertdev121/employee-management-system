@@ -168,70 +168,15 @@
         border-bottom: none;
     }
 
-    /* Table Cell Styles */
-    .payroll-period {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .payroll-period-main {
-        font-weight: 500;
-        color: #1f2937;
-    }
-
-    .payroll-period-range {
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-
+    /* Amount Display */
     .amount-display {
         font-weight: 600;
         color: #1f2937;
     }
 
-    .amount-regular {
-        color: var(--success);
-    }
-
-    .amount-overtime {
-        color: var(--warning);
-    }
-
-    .amount-total {
+    .amount-primary {
         color: var(--primary);
         font-size: 1.1em;
-    }
-
-    /* Badges */
-    .badge-custom {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.375rem 0.875rem;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        text-transform: capitalize;
-    }
-
-    .badge-success {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .badge-danger {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .badge-warning {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .badge-info {
-        background: #dbeafe;
-        color: #1e40af;
     }
 
     /* Empty State */
@@ -257,14 +202,6 @@
         font-size: 0.9375rem;
         color: #9ca3af;
         margin-top: 0.5rem;
-    }
-
-    /* Pagination */
-    .pagination-wrapper {
-        display: flex;
-        justify-content: center;
-        padding: 1.5rem;
-        border-top: 1px solid #e5e7eb;
     }
 
     /* Responsive */
@@ -315,92 +252,97 @@
     </div>
 </div>
 
-<!-- Current Status Cards -->
+<!-- Monthly Summary -->
 <div class="stats-section">
     <div class="stats-card">
-        <h3>{{ $payrollReports->where('payment_status', 'paid')->count() }}</h3>
-        <p>Paid Payrolls</p>
+        <h3>{{ number_format($previousMonthHours, 1) }}h</h3>
+        <p>Last Month Hours</p>
     </div>
     <div class="stats-card">
-        <h3>{{ $payrollReports->where('payment_status', 'pending')->count() }}</h3>
-        <p>Pending Payments</p>
+        <h3>${{ number_format($previousMonthPay, 2) }}</h3>
+        <p>Last Month Pay</p>
     </div>
     <div class="stats-card">
-        <h3>${{ number_format($payrollReports->where('payment_status', 'paid')->sum('total_pay'), 2) }}</h3>
-        <p>Total Earned</p>
+        <h3>{{ number_format($currentMonthHours, 1) }}h</h3>
+        <p>This Month Hours</p>
     </div>
     <div class="stats-card">
-        <h3>{{ number_format($payrollReports->avg('total_hours'), 1) }}h</h3>
-        <p>Average Hours</p>
+        <h3>${{ number_format($currentMonthPay, 2) }}</h3>
+        <p>This Month Pay</p>
     </div>
 </div>
 
+<!-- Attendance History -->
 <div class="dashboard-card">
     <div class="card-body">
+        <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+            <h5 style="margin: 0; color: #1f2937; font-weight: 600;">Attendance History</h5>
+            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Your complete attendance and earnings history</p>
+        </div>
         <div class="table-responsive">
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Period</th>
+                        <th>Date</th>
+                        <th>Shift</th>
                         <th>Hours Worked</th>
                         <th>Pay Rate</th>
                         <th>Total Pay</th>
-                        <th>Status</th>
-                        <th>Generated</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($payrollReports as $payroll)
-                    <tr>
-                        <td>
-                            <div class="payroll-period">
-                                <span class="payroll-period-main">{{ $payroll->period_start->format('M Y') }}</span>
-                                <span class="payroll-period-range">{{ $payroll->period_start->format('M d') }} - {{ $payroll->period_end->format('M d, Y') }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div style="font-weight: 600; color: #1f2937;">
-                                {{ number_format($payroll->total_hours, 1) }}h
-                            </div>
-                        </td>
-                        <td>
-                            <span class="amount-display">${{ number_format($payroll->total_pay / $payroll->total_hours, 2) }}/hr</span>
-                        </td>
-                        <td>
-                            <span class="amount-display amount-total">${{ number_format($payroll->total_pay, 2) }}</span>
-                        </td>
-                        <td>
-                            <span class="badge-custom badge-{{ $payroll->payment_status == 'paid' ? 'success' : 'warning' }}">
-                                {{ ucfirst($payroll->payment_status) }}
-                            </span>
-                        </td>
-                        <td>
-                            <div style="font-size: 0.875rem; color: #6b7280;">
-                                {{ $payroll->created_at->format('M d, H:i') }}
-                                @if($payroll->generator)
-                                    <br><small>by {{ $payroll->generator->name }}</small>
+                    @forelse($attendanceRecords as $attendance)
+                        <tr>
+                            <td>
+                                <div style="font-weight: 500; color: #1f2937;">
+                                    {{ $attendance->attendance_date->format('M d, Y') }}
+                                </div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">
+                                    {{ $attendance->attendance_date->format('l') }}
+                                </div>
+                            </td>
+                            <td>
+                                @if($attendance->shift)
+                                    <div style="font-weight: 500; color: #1f2937;">
+                                        {{ $attendance->shift->shift_name }}
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: #6b7280;">
+                                        {{ $attendance->shift->start_time->format('H:i') }} - {{ $attendance->shift->end_time->format('H:i') }}
+                                    </div>
+                                @else
+                                    <span style="color: #9ca3af;">N/A</span>
                                 @endif
-                            </div>
-                        </td>
-                    </tr>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: #1f2937;">
+                                    {{ number_format($attendance->total_hours, 1) }}h
+                                </div>
+                            </td>
+                            <td>
+                                <span class="amount-display">${{ number_format($user->hourly_rate, 2) }}/hr</span>
+                            </td>
+                            <td>
+                                <span class="amount-display amount-primary">${{ number_format($attendance->total_hours * $user->hourly_rate, 2) }}</span>
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">💰</div>
-                                <div class="empty-state-text">No payroll records found</div>
-                                <div class="empty-state-subtext">Your payroll information will appear here once generated by your administrator</div>
-                            </div>
-                        </td>
-                    </tr>
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">📅</div>
+                                    <div class="empty-state-text">No attendance records found</div>
+                                    <div class="empty-state-subtext">Your attendance records will appear here once you start working shifts</div>
+                                </div>
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        @if($payrollReports->hasPages())
-        <div class="pagination-wrapper">
-            {{ $payrollReports->links() }}
+        @if($attendanceRecords->hasPages())
+        <div style="display: flex; justify-content: center; padding: 1.5rem; border-top: 1px solid #e5e7eb;">
+            {{ $attendanceRecords->links() }}
         </div>
         @endif
     </div>

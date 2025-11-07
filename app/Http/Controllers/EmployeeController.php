@@ -190,13 +190,59 @@ class EmployeeController extends Controller
     {
         $user = Auth::user();
 
-        // Get payroll reports for the current employee
-        $payrollReports = PayrollReport::where('employee_id', $user->id)
-            ->with('generator')
-            ->latest()
-            ->paginate(15);
+        // Get monthly pay based on attendance and projections
+        $currentMonth = now()->startOfMonth();
+        $previousMonth = now()->subMonth()->startOfMonth();
 
-        return view('employee.payroll.index', compact('payrollReports'));
+        // Calculate previous month hours and pay from actual attendance
+        $previousMonthAttendance = AttendanceLog::where('employee_id', $user->id)
+            ->where('status', 'present')
+            ->whereBetween('attendance_date', [$previousMonth, $previousMonth->copy()->endOfMonth()])
+            ->get();
+
+        $previousMonthHours = $previousMonthAttendance->sum('total_hours');
+        $previousMonthPay = $previousMonthHours * $user->hourly_rate;
+
+        // Calculate current month projection from accepted shifts
+        $currentMonthShifts = EmployeeShift::where('employee_id', $user->id)
+            ->where('status', 'accepted')
+            ->whereBetween('shift_date', [$currentMonth, $currentMonth->copy()->endOfMonth()])
+            ->with('shift')
+            ->get();
+
+        // Calculate current month hours and pay
+        $currentMonthHours = 0;
+        $currentMonthPay = 0;
+
+        foreach ($currentMonthShifts as $shiftAssignment) {
+            if ($shiftAssignment->shift) {
+                $startTime = $shiftAssignment->shift->start_time;
+                $endTime = $shiftAssignment->shift->end_time;
+
+                if ($endTime < $startTime) {
+                    $endTime = $endTime->addDay();
+                }
+
+                $hours = $endTime->diffInHours($startTime);
+                $currentMonthHours += $hours;
+                $currentMonthPay += $hours * $user->hourly_rate;
+            }
+        }
+
+        // Get all attendance records with pagination
+        $attendanceRecords = AttendanceLog::where('employee_id', $user->id)
+            ->where('status', 'present')
+            ->orderBy('attendance_date', 'desc')
+            ->paginate(12); // 12 months per page
+
+        return view('employee.payroll.index', compact(
+            'previousMonthHours',
+            'previousMonthPay',
+            'currentMonthHours',
+            'currentMonthPay',
+            'attendanceRecords',
+            'user'
+        ));
     }
 
     private function addShiftHoursToAttendance(EmployeeShift $employeeShift)
