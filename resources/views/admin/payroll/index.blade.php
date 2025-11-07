@@ -259,7 +259,7 @@
 <div class="stats-grid">
     <div class="stat-card green">
         <div class="stat-card-value">${{ number_format($totalProjectedPay, 2) }}</div>
-        <div class="stat-card-label">Total Projected Pay</div>
+        <div class="stat-card-label">Total Pay</div>
     </div>
     <div class="stat-card blue">
         <div class="stat-card-value">{{ $employeesWithPay->count() }}</div>
