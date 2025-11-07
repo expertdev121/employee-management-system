@@ -15,7 +15,7 @@
                         <form>
                             <div class="mb-3">
                                 <label class="form-label">Company Name</label>
-                                <input type="text" class="form-control" value="Employee Shift Management">
+                                <input type="text" class="form-control" value="EMS">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Default Working Hours</label>

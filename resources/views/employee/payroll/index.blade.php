@@ -169,38 +169,38 @@
     }
 
     /* Table Cell Styles */
-    .attendance-date {
+    .payroll-period {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
     }
 
-    .attendance-date-main {
+    .payroll-period-main {
         font-weight: 500;
         color: #1f2937;
     }
 
-    .attendance-date-day {
+    .payroll-period-range {
         font-size: 0.875rem;
         color: #6b7280;
     }
 
-    .time-display {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #374151;
-        font-weight: 500;
-    }
-
-    .time-display i {
-        color: var(--primary);
-        font-size: 0.875rem;
-    }
-
-    .hours-display {
+    .amount-display {
         font-weight: 600;
         color: #1f2937;
+    }
+
+    .amount-regular {
+        color: var(--success);
+    }
+
+    .amount-overtime {
+        color: var(--warning);
+    }
+
+    .amount-total {
+        color: var(--primary);
+        font-size: 1.1em;
     }
 
     /* Badges */
@@ -267,97 +267,6 @@
         border-top: 1px solid #e5e7eb;
     }
 
-    /* Action Buttons */
-    .btn-action {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
-        border-radius: 6px;
-        font-size: 1rem;
-        font-weight: 600;
-        border: 2px solid;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .btn-action-danger {
-        background: white;
-        border-color: #fecaca;
-        color: #dc2626;
-    }
-
-    .btn-action-danger:hover {
-        background: #fef2f2;
-        border-color: #dc2626;
-        color: #991b1b;
-        transform: translateY(-1px);
-    }
-
-    .btn-action-primary {
-        background: white;
-        border-color: #bfdbfe;
-        color: #2563eb;
-    }
-
-    .btn-action-primary:hover {
-        background: #eff6ff;
-        border-color: #2563eb;
-        color: #1e40af;
-        transform: translateY(-1px);
-    }
-
-    .btn-action-warning {
-        background: white;
-        border-color: #fed7aa;
-        color: #ea580c;
-    }
-
-    .btn-action-warning:hover {
-        background: #fff7ed;
-        border-color: #ea580c;
-        color: #c2410c;
-        transform: translateY(-1px);
-    }
-
-    .btn-action-secondary {
-        background: #6b7280;
-        border-color: #6b7280;
-        color: white;
-    }
-
-    .btn-action-secondary:hover {
-        background: #4b5563;
-        border-color: #4b5563;
-        color: white;
-        transform: translateY(-1px);
-    }
-
-    /* Custom Popup Animations */
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-
     /* Responsive */
     @media (max-width: 768px) {
         .page-header-content {
@@ -390,24 +299,14 @@
         .custom-table tbody td {
             padding: 0.75rem 1rem;
         }
-
-        #attendanceControls {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        #attendanceControls button {
-            width: 100%;
-            margin-bottom: 0.5rem;
-        }
     }
 </style>
 
 <div class="page-header">
     <div class="page-header-content">
         <div class="page-title">
-            <i class="fas fa-calendar-check"></i>
-            <h2>My Attendance</h2>
+            <i class="fas fa-dollar-sign"></i>
+            <h2>My Payroll</h2>
         </div>
         <a href="{{ route('employee.dashboard') }}" class="btn-back">
             <i class="fas fa-arrow-left"></i>
@@ -419,20 +318,20 @@
 <!-- Current Status Cards -->
 <div class="stats-section">
     <div class="stats-card">
-        <h3>{{ number_format($thisMonthHours, 1) }}</h3>
-        <p>This Month Hours</p>
+        <h3>{{ $payrollReports->where('payment_status', 'paid')->count() }}</h3>
+        <p>Paid Payrolls</p>
     </div>
     <div class="stats-card">
-        <h3>{{ $acceptedShifts->count() }}</h3>
-        <p>Accepted Shifts</p>
+        <h3>{{ $payrollReports->where('payment_status', 'pending')->count() }}</h3>
+        <p>Pending Payments</p>
     </div>
     <div class="stats-card">
-        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfMonth())->count() }}</h3>
-        <p>This Month Shifts</p>
+        <h3>${{ number_format($payrollReports->where('payment_status', 'paid')->sum('total_pay'), 2) }}</h3>
+        <p>Total Earned</p>
     </div>
     <div class="stats-card">
-        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfWeek())->count() }}</h3>
-        <p>This Week Shifts</p>
+        <h3>{{ number_format($payrollReports->avg('total_hours'), 1) }}h</h3>
+        <p>Average Hours</p>
     </div>
 </div>
 
@@ -442,45 +341,45 @@
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Shift Date</th>
-                        <th>Shift Name</th>
-                        <th>Shift Time</th>
+                        <th>Period</th>
                         <th>Hours Worked</th>
+                        <th>Pay Rate</th>
+                        <th>Total Pay</th>
                         <th>Status</th>
-                        <th>Accepted At</th>
+                        <th>Generated</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($acceptedShifts as $shift)
+                    @forelse($payrollReports as $payroll)
                     <tr>
                         <td>
-                            <div class="attendance-date">
-                                <span class="attendance-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                <span class="attendance-date-day">{{ $shift->shift_date->format('l') }}</span>
+                            <div class="payroll-period">
+                                <span class="payroll-period-main">{{ $payroll->period_start->format('M Y') }}</span>
+                                <span class="payroll-period-range">{{ $payroll->period_start->format('M d') }} - {{ $payroll->period_end->format('M d, Y') }}</span>
                             </div>
                         </td>
                         <td>
-                            <div style="font-weight: 500; color: #1f2937;">
-                                {{ $shift->shift->shift_name }}
+                            <div style="font-weight: 600; color: #1f2937;">
+                                {{ number_format($payroll->total_hours, 1) }}h
                             </div>
                         </td>
                         <td>
-                            <div class="time-display">
-                                <i class="fas fa-clock"></i>
-                                <span>{{ $shift->shift->start_time->format('H:i') }} - {{ $shift->shift->end_time->format('H:i') }}</span>
-                            </div>
+                            <span class="amount-display">${{ number_format($payroll->total_pay / $payroll->total_hours, 2) }}/hr</span>
                         </td>
                         <td>
-                            <span class="hours-display">{{ $shift->attendanceLog ? number_format($shift->attendanceLog->total_hours, 2) : 'Pending' }}</span>
+                            <span class="amount-display amount-total">${{ number_format($payroll->total_pay, 2) }}</span>
                         </td>
                         <td>
-                            <span class="badge-custom badge-success">
-                                Accepted
+                            <span class="badge-custom badge-{{ $payroll->payment_status == 'paid' ? 'success' : 'warning' }}">
+                                {{ ucfirst($payroll->payment_status) }}
                             </span>
                         </td>
                         <td>
                             <div style="font-size: 0.875rem; color: #6b7280;">
-                                {{ $shift->responded_at ? $shift->responded_at->format('M d, H:i') : 'N/A' }}
+                                {{ $payroll->created_at->format('M d, H:i') }}
+                                @if($payroll->generator)
+                                    <br><small>by {{ $payroll->generator->name }}</small>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -488,9 +387,9 @@
                     <tr>
                         <td colspan="6">
                             <div class="empty-state">
-                                <div class="empty-state-icon">📅</div>
-                                <div class="empty-state-text">No accepted shifts found</div>
-                                <div class="empty-state-subtext">Your accepted shifts and hours will appear here</div>
+                                <div class="empty-state-icon">💰</div>
+                                <div class="empty-state-text">No payroll records found</div>
+                                <div class="empty-state-subtext">Your payroll information will appear here once generated by your administrator</div>
                             </div>
                         </td>
                     </tr>
@@ -499,13 +398,12 @@
             </table>
         </div>
 
-        @if($acceptedShifts->hasPages())
+        @if($payrollReports->hasPages())
         <div class="pagination-wrapper">
-            {{ $acceptedShifts->links() }}
+            {{ $payrollReports->links() }}
         </div>
         @endif
     </div>
 </div>
-
 
 @endsection

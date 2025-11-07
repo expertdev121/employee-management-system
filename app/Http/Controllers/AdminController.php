@@ -404,6 +404,123 @@ class AdminController extends Controller
         return redirect()->route('admin.attendance.index')->with('success', 'Attendance record deleted successfully.');
     }
 
+    // Payroll CRUD
+    public function payroll()
+    {
+        $payrollReports = PayrollReport::with(['employee', 'generator'])->paginate(15);
+        return view('admin.payroll.index', compact('payrollReports'));
+    }
+
+    public function createPayroll()
+    {
+        $employees = User::employees()->active()->get();
+        return view('admin.payroll.form', compact('employees'));
+    }
+
+    public function storePayroll(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'period_start' => 'required|date',
+            'period_end' => 'required|date|after:period_start',
+            'total_hours' => 'required|numeric|min:0',
+            'regular_hours' => 'required|numeric|min:0',
+            'overtime_hours' => 'nullable|numeric|min:0',
+            'deductions' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+        ]);
+
+        $employee = User::find($request->employee_id);
+        $hourlyRate = $employee->hourly_rate ?? 0;
+
+        $regularPay = $request->regular_hours * $hourlyRate;
+        $overtimePay = ($request->overtime_hours ?? 0) * ($hourlyRate * 1.5); // Assuming 1.5x for overtime
+        $deductions = $request->deductions ?? 0;
+        $totalPay = $regularPay + $overtimePay - $deductions;
+
+        PayrollReport::create([
+            'employee_id' => $request->employee_id,
+            'period_start' => $request->period_start,
+            'period_end' => $request->period_end,
+            'total_hours' => $request->total_hours,
+            'regular_hours' => $request->regular_hours,
+            'overtime_hours' => $request->overtime_hours ?? 0,
+            'hourly_rate' => $hourlyRate,
+            'regular_pay' => $regularPay,
+            'overtime_pay' => $overtimePay,
+            'deductions' => $deductions,
+            'total_pay' => $totalPay,
+            'days_worked' => round($request->total_hours / 8), // Assuming 8 hours per day
+            'attendance_rate' => 100, // This would be calculated based on actual attendance
+            'status' => 'generated',
+            'payment_status' => 'pending',
+            'generated_by' => auth()->id(),
+            'notes' => $request->notes,
+        ]);
+
+        return redirect()->route('admin.payroll.index')->with('success', 'Payroll report created successfully.');
+    }
+
+    public function showPayroll(PayrollReport $payrollReport)
+    {
+        $payrollReport->load(['employee', 'generator']);
+        return view('admin.payroll.show', compact('payrollReport'));
+    }
+
+    public function editPayroll(PayrollReport $payrollReport)
+    {
+        $employees = User::employees()->active()->get();
+        return view('admin.payroll.form', compact('payrollReport', 'employees'));
+    }
+
+    public function updatePayroll(Request $request, PayrollReport $payrollReport)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'period_start' => 'required|date',
+            'period_end' => 'required|date|after:period_start',
+            'total_hours' => 'required|numeric|min:0',
+            'regular_hours' => 'required|numeric|min:0',
+            'overtime_hours' => 'nullable|numeric|min:0',
+            'deductions' => 'nullable|numeric|min:0',
+            'payment_status' => 'required|in:pending,paid',
+            'notes' => 'nullable|string',
+        ]);
+
+        $employee = User::find($request->employee_id);
+        $hourlyRate = $employee->hourly_rate ?? 0;
+
+        $regularPay = $request->regular_hours * $hourlyRate;
+        $overtimePay = ($request->overtime_hours ?? 0) * ($hourlyRate * 1.5);
+        $deductions = $request->deductions ?? 0;
+        $totalPay = $regularPay + $overtimePay - $deductions;
+
+        $payrollReport->update([
+            'employee_id' => $request->employee_id,
+            'period_start' => $request->period_start,
+            'period_end' => $request->period_end,
+            'total_hours' => $request->total_hours,
+            'regular_hours' => $request->regular_hours,
+            'overtime_hours' => $request->overtime_hours ?? 0,
+            'hourly_rate' => $hourlyRate,
+            'regular_pay' => $regularPay,
+            'overtime_pay' => $overtimePay,
+            'deductions' => $deductions,
+            'total_pay' => $totalPay,
+            'days_worked' => round($request->total_hours / 8),
+            'payment_status' => $request->payment_status,
+            'notes' => $request->notes,
+        ]);
+
+        return redirect()->route('admin.payroll.index')->with('success', 'Payroll report updated successfully.');
+    }
+
+    public function destroyPayroll(PayrollReport $payrollReport)
+    {
+        $payrollReport->delete();
+        return redirect()->route('admin.payroll.index')->with('success', 'Payroll report deleted successfully.');
+    }
+
     public function reports(Request $request)
     {
         $reportType = $request->get('type', 'attendance');
@@ -611,13 +728,13 @@ class AdminController extends Controller
     {
         // Get current settings from config or database
         $settings = [
-            'company_name' => config('app.name', 'Employee Shift Management'),
+            'company_name' => config('app.name', 'EMS'),
             'default_working_hours' => config('app.default_working_hours', 8),
             'timezone' => config('app.timezone', 'UTC'),
         ];
 
         return view('admin.settings.index', compact('settings'));
-    } 
+    }
 
     public function updateSettings(Request $request)
     {

@@ -429,17 +429,6 @@
                                     <span>Reject</span>
                                 </button>
                             </div>
-                            @elseif($shift->status === 'accepted' && $shift->shift_date->isToday())
-                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                <button class="btn-action btn-action-success start-shift-btn" data-shift-id="{{ $shift->id }}">
-                                    <i class="fas fa-play"></i>
-                                    <span>Start Shift</span>
-                                </button>
-                                <a href="{{ route('employee.shifts.show', $shift) }}" class="btn-action btn-action-primary">
-                                    <i class="fas fa-eye"></i>
-                                    <span>Details</span>
-                                </a>
-                            </div>
                             @else
                             <a href="{{ route('employee.shifts.show', $shift) }}" class="btn-action btn-action-primary">
                                 <i class="fas fa-eye"></i>

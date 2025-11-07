@@ -399,7 +399,11 @@
                                 <i class="fas fa-map-marker-alt"></i>
                                 <span>{{ $shift->shift->location }}</span>
                             </div>
-
+                            @if($shift->status == 'accepted')
+                                <div class="mt-2">
+                                    <span class="badge-custom badge-success">Accepted - Hours will be added automatically</span>
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 @else
@@ -495,6 +499,52 @@
     </div>
 </div>
 
+<!-- Recent Payroll -->
+@if($recentPayrolls->count() > 0)
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <h5>Recent Payroll</h5>
+        <a href="#" class="view-all-link">
+            View All <i class="fas fa-arrow-right" style="font-size: 0.75rem;"></i>
+        </a>
+    </div>
+    <div class="dashboard-card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th>Total Hours</th>
+                        <th>Total Pay</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($recentPayrolls as $payroll)
+                        <tr>
+                            <td>
+                                <div style="font-weight: 500;">{{ $payroll->period_start->format('M d') }} - {{ $payroll->period_end->format('M d, Y') }}</div>
+                            </td>
+                            <td style="font-weight: 600;">
+                                {{ number_format($payroll->total_hours, 1) }}h
+                            </td>
+                            <td style="font-weight: 600; color: var(--success);">
+                                ${{ number_format($payroll->total_pay, 2) }}
+                            </td>
+                            <td>
+                                <span class="badge-custom badge-{{ $payroll->payment_status == 'paid' ? 'success' : 'warning' }}">
+                                    {{ ucfirst($payroll->payment_status) }}
+                                </span>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
 <!-- Quick Actions -->
 <div class="dashboard-card">
     <div class="dashboard-card-header">
@@ -522,45 +572,5 @@
     </div>
 </div>
 
-<script>
-$(document).ready(function() {
-    $('.start-shift-btn').on('click', function() {
-        const shiftId = $(this).data('shift-id');
-        const button = $(this);
 
-        // Disable button to prevent multiple clicks
-        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Starting...');
-
-        $.ajax({
-            url: '{{ route("employee.clock-in") }}',
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                if (response.success) {
-                    button.removeClass('btn-success').addClass('btn-warning').html('<i class="fas fa-pause"></i> On Shift');
-                    button.off('click'); // Remove click handler
-
-                    // Show success message
-                    toastr.success('Shift started successfully!');
-
-                    // Optionally refresh the page or update UI
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    button.prop('disabled', false).html('<i class="fas fa-play"></i> Start Shift');
-                    toastr.error(response.error || 'Failed to start shift');
-                }
-            },
-            error: function(xhr) {
-                button.prop('disabled', false).html('<i class="fas fa-play"></i> Start Shift');
-                const error = xhr.responseJSON?.error || 'An error occurred';
-                toastr.error(error);
-            }
-        });
-    });
-});
-</script>
 @endsection

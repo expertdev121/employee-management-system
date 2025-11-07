@@ -420,6 +420,7 @@
         <div class="stat-card-value">{{ $todayAttendance }}</div>
         <div class="stat-card-label">Today's Attendance</div>
     </div>
+
 </div>
 
 <!-- Dashboard Content -->
@@ -573,6 +574,8 @@
         </div>
     </div>
 </div>
+
+
 
 <!-- Quick Actions -->
 <div class="dashboard-card">

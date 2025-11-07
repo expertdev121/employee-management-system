@@ -407,30 +407,32 @@
                     </h4>
                     @if($shift->employeeShifts->count() > 0)
                         @foreach($shift->employeeShifts as $assignment)
-                            <div class="employee-card">
-                                <div class="employee-card-item">
-                                    <span class="employee-card-label">Name:</span>
-                                    <span class="employee-card-value">{{ $assignment->employee->name }}</span>
-                                </div>
-                                <div class="employee-card-item">
-                                    <span class="employee-card-label">Email:</span>
-                                    <span class="employee-card-value">{{ $assignment->employee->email }}</span>
-                                </div>
-                                <div class="employee-card-item">
-                                    <span class="employee-card-label">Status:</span>
-                                    <span class="employee-card-value">
-                                        <span class="badge-custom badge-{{ $assignment->status === 'assigned' ? 'success' : ($assignment->status === 'pending' ? 'warning' : 'danger') }}">
-                                            {{ ucfirst($assignment->status) }}
-                                        </span>
-                                    </span>
-                                </div>
-                                @if($assignment->shift_date)
+                            @if($assignment->employee)
+                                <div class="employee-card">
                                     <div class="employee-card-item">
-                                        <span class="employee-card-label">Assigned Date:</span>
-                                        <span class="employee-card-value">{{ $assignment->shift_date->format('M d, Y') }}</span>
+                                        <span class="employee-card-label">Name:</span>
+                                        <span class="employee-card-value">{{ $assignment->employee->name }}</span>
                                     </div>
-                                @endif
-                            </div>
+                                    <div class="employee-card-item">
+                                        <span class="employee-card-label">Email:</span>
+                                        <span class="employee-card-value">{{ $assignment->employee->email }}</span>
+                                    </div>
+                                    <div class="employee-card-item">
+                                        <span class="employee-card-label">Status:</span>
+                                        <span class="employee-card-value">
+                                            <span class="badge-custom badge-{{ $assignment->status === 'assigned' ? 'success' : ($assignment->status === 'pending' ? 'warning' : 'danger') }}">
+                                                {{ ucfirst($assignment->status) }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    @if($assignment->shift_date)
+                                        <div class="employee-card-item">
+                                            <span class="employee-card-label">Assigned Date:</span>
+                                            <span class="employee-card-value">{{ $assignment->shift_date->format('M d, Y') }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         @endforeach
                     @else
                         <div class="empty-state">
@@ -453,29 +455,34 @@
                             ->get()
                             ->pluck('employee.attendanceLogs')
                             ->flatten()
+                            ->filter(function($attendance) {
+                                return $attendance && $attendance->employee;
+                            })
                             ->sortByDesc('attendance_date')
                             ->take(5);
                     @endphp
                     @if($recentAttendance->count() > 0)
                         @foreach($recentAttendance as $attendance)
-                            <div class="attendance-card">
-                                <div class="attendance-card-item">
-                                    <span class="attendance-card-label">Employee:</span>
-                                    <span class="attendance-card-value">{{ $attendance->employee->name }}</span>
-                                </div>
-                                <div class="attendance-card-item">
-                                    <span class="attendance-card-label">Date:</span>
-                                    <span class="attendance-card-value">{{ $attendance->attendance_date->format('M d, Y') }}</span>
-                                </div>
-                                <div class="attendance-card-item">
-                                    <span class="attendance-card-label">Status:</span>
-                                    <span class="attendance-card-value">
-                                        <span class="badge-custom badge-{{ $attendance->status === 'present' ? 'success' : ($attendance->status === 'absent' ? 'danger' : 'warning') }}">
-                                            {{ ucfirst($attendance->status) }}
+                            @if($attendance->employee)
+                                <div class="attendance-card">
+                                    <div class="attendance-card-item">
+                                        <span class="attendance-card-label">Employee:</span>
+                                        <span class="attendance-card-value">{{ $attendance->employee->name }}</span>
+                                    </div>
+                                    <div class="attendance-card-item">
+                                        <span class="attendance-card-label">Date:</span>
+                                        <span class="attendance-card-value">{{ $attendance->attendance_date->format('M d, Y') }}</span>
+                                    </div>
+                                    <div class="attendance-card-item">
+                                        <span class="attendance-card-label">Status:</span>
+                                        <span class="attendance-card-value">
+                                            <span class="badge-custom badge-{{ $attendance->status === 'present' ? 'success' : ($attendance->status === 'absent' ? 'danger' : 'warning') }}">
+                                                {{ ucfirst($attendance->status) }}
+                                            </span>
                                         </span>
-                                    </span>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         @endforeach
                     @else
                         <div class="empty-state">
