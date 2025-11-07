@@ -512,8 +512,7 @@
                         <select class="form-control @error('employee_id') is-invalid @enderror" id="employee_id" name="employee_id" required>
                             <option value="">Choose an employee...</option>
                             @php
-                                $assignedEmployeeIds = $shift->employeeShifts->pluck('employee_id')->toArray();
-                                $availableEmployees = \App\Models\User::employees()->active()->whereNotIn('id', $assignedEmployeeIds)->get();
+                                $availableEmployees = \App\Models\User::employees()->active()->get();
                             @endphp
                             @foreach($availableEmployees as $employee)
                                 <option value="{{ $employee->id }}">{{ $employee->name }} ({{ $employee->email }})</option>
