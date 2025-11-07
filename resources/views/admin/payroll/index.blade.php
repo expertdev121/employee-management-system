@@ -249,120 +249,168 @@
 </style>
 
 <div class="page-header">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <h1>Payroll Management 💰</h1>
-            <p>Manage employee payroll reports and payments.</p>
-        </div>
-        <div>
-            <a href="{{ route('admin.payroll.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Create Payroll Report
-            </a>
-        </div>
+    <div>
+        <h1>Employee Payroll 💰</h1>
+        <p>View employee payroll based on accepted shifts and hourly rates.</p>
     </div>
 </div>
 
 <!-- Statistics Cards -->
 <div class="stats-grid">
-    <div class="stat-card blue">
-        <div class="stat-card-value">{{ $payrollReports->total() }}</div>
-        <div class="stat-card-label">Total Reports</div>
-    </div>
     <div class="stat-card green">
-        <div class="stat-card-value">${{ number_format($payrollReports->sum('total_pay'), 2) }}</div>
-        <div class="stat-card-label">Total Payroll Amount</div>
+        <div class="stat-card-value">${{ number_format($totalProjectedPay, 2) }}</div>
+        <div class="stat-card-label">Total Projected Pay</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-card-value">{{ $employeesWithPay->count() }}</div>
+        <div class="stat-card-label">Employees with Shifts</div>
     </div>
     <div class="stat-card orange">
-        <div class="stat-card-value">{{ $payrollReports->where('payment_status', 'pending')->count() }}</div>
-        <div class="stat-card-label">Pending Payments</div>
+        <div class="stat-card-value">{{ $employeesWithPay->sum('shifts_count') }}</div>
+        <div class="stat-card-label">Total Accepted Shifts</div>
     </div>
     <div class="stat-card purple">
-        <div class="stat-card-value">{{ $payrollReports->where('payment_status', 'paid')->count() }}</div>
-        <div class="stat-card-label">Paid Reports</div>
+        <div class="stat-card-value">{{ number_format($employeesWithPay->sum('calculated_hours'), 1) }}h</div>
+        <div class="stat-card-label">Total Hours</div>
     </div>
 </div>
 
-<!-- Payroll Reports Table -->
+<!-- Employee Payroll -->
 <div class="dashboard-card">
     <div class="dashboard-card-header">
-        <h5>Payroll Reports</h5>
+        <h5>Employee Payroll</h5>
+        <div style="font-size: 0.875rem; color: #6b7280;">Based on accepted shifts and hourly rates</div>
     </div>
     <div class="dashboard-card-body" style="padding: 0;">
-        @if($payrollReports->count() > 0)
+        @if($employeesWithPay->count() > 0)
             <div class="table-responsive">
                 <table class="custom-table">
                     <thead>
                         <tr>
                             <th>Employee</th>
-                            <th>Period</th>
+                            <th>Shifts</th>
                             <th>Total Hours</th>
+                            <th>Hourly Rate</th>
                             <th>Total Pay</th>
-                            <th>Payment Status</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($payrollReports as $report)
+                        @foreach($employeesWithPay as $employee)
                             <tr>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                                         <div style="width: 40px; height: 40px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-weight: 600;">
-                                            {{ substr($report->employee->name, 0, 1) }}
+                                            {{ substr($employee->name, 0, 1) }}
                                         </div>
                                         <div>
-                                            <div style="font-weight: 600;">{{ $report->employee->name }}</div>
-                                            <div style="font-size: 0.875rem; color: #6b7280;">{{ $report->employee->email }}</div>
+                                            <div style="font-weight: 600;">{{ $employee->name }}</div>
+                                            <div style="font-size: 0.875rem; color: #6b7280;">{{ $employee->email }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <div style="font-weight: 500;">{{ $report->period_start->format('M d') }} - {{ $report->period_end->format('M d, Y') }}</div>
+                                    <div style="font-weight: 600;">{{ $employee->shifts_count }}</div>
+                                    <div style="font-size: 0.875rem; color: #6b7280;">accepted shifts</div>
                                 </td>
                                 <td>
-                                    <div style="font-weight: 600;">{{ $report->total_hours }}h</div>
-                                    <div style="font-size: 0.875rem; color: #6b7280;">{{ $report->regular_hours }}h regular</div>
+                                    <div style="font-weight: 600;">{{ $employee->calculated_hours }}h</div>
                                 </td>
                                 <td>
-                                    <div style="font-weight: 700; color: #10b981;">${{ number_format($report->total_pay, 2) }}</div>
-                                    <div style="font-size: 0.875rem; color: #6b7280;">@ ${{ number_format($report->hourly_rate, 2) }}/hr</div>
+                                    <div style="font-weight: 600;">${{ number_format($employee->hourly_rate, 2) }}/hr</div>
                                 </td>
                                 <td>
-                                    <span class="badge-custom badge-{{ $report->payment_status === 'paid' ? 'success' : 'warning' }}">
-                                        {{ ucfirst($report->payment_status) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="{{ route('admin.payroll.show', $report) }}" class="btn btn-success btn-sm">
-                                            <i class="fas fa-eye"></i>
-                                            View
-                                        </a>
-                                        <a href="{{ route('admin.payroll.edit', $report) }}" class="btn btn-warning btn-sm">
-                                            <i class="fas fa-edit"></i>
-                                            Edit
-                                        </a>
-                                        <button class="btn btn-danger btn-sm" onclick="deletePayroll({{ $report->id }}, '{{ $report->employee->name }}')">
-                                            <i class="fas fa-trash"></i>
-                                            Delete
-                                        </button>
-                                    </div>
+                                    <div style="font-weight: 700; color: #10b981;">${{ number_format($employee->calculated_pay, 2) }}</div>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
-                {{ $payrollReports->links() }}
-            </div>
         @else
             <div class="empty-state">
-                <div class="empty-state-icon">💰</div>
-                <div class="empty-state-text">No payroll reports found. Create your first payroll report to get started.</div>
+                <div class="empty-state-icon">📅</div>
+                <div class="empty-state-text">No accepted shifts found</div>
+                <div class="empty-state-subtext">Employee payroll will appear here once shifts are accepted</div>
             </div>
         @endif
     </div>
 </div>
+
+<!-- Payroll Reports Table -->
+@if($payrollReports->count() > 0)
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <h5>Generated Payroll Reports</h5>
+    </div>
+    <div class="dashboard-card-body" style="padding: 0;">
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Period</th>
+                        <th>Total Hours</th>
+                        <th>Total Pay</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($payrollReports as $report)
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-weight: 600;">
+                                        {{ substr($report->employee->name, 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600;">{{ $report->employee->name }}</div>
+                                        <div style="font-size: 0.875rem; color: #6b7280;">{{ $report->employee->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 500;">{{ $report->period_start->format('M d') }} - {{ $report->period_end->format('M d, Y') }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;">{{ $report->total_hours }}h</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">{{ $report->regular_hours }}h regular</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 700; color: #10b981;">${{ number_format($report->total_pay, 2) }}</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">@ ${{ number_format($report->hourly_rate, 2) }}/hr</div>
+                            </td>
+                            <td>
+                                <span class="badge-custom badge-{{ $report->payment_status === 'paid' ? 'success' : 'warning' }}">
+                                    {{ ucfirst($report->payment_status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{{ route('admin.payroll.show', $report) }}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                        View
+                                    </a>
+                                    <a href="{{ route('admin.payroll.edit', $report) }}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                        Edit
+                                    </a>
+                                    <button class="btn btn-danger btn-sm" onclick="deletePayroll({{ $report->id }}, '{{ $report->employee->name }}')">
+                                        <i class="fas fa-trash"></i>
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
+            {{ $payrollReports->links() }}
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection

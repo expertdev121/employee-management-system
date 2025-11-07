@@ -329,11 +329,14 @@
 
                 <!-- Shift Select -->
                 <div class="form-group">
-                    <label for="shift_id" class="form-label">Shift</label>
+                    <label for="shift_id" class="form-label">
+                        Shift <span class="required">*</span>
+                    </label>
                     <select id="shift_id"
                             name="shift_id"
-                            class="form-select @error('shift_id') is-invalid @enderror">
-                        <option value="" disabled selected>Select Shift (Optional)</option>
+                            class="form-select @error('shift_id') is-invalid @enderror"
+                            required>
+                        <option value="" disabled selected>Select Shift</option>
                         @foreach($shifts as $shift)
                             <option value="{{ $shift->id }}" {{ old('shift_id', $attendanceLog->shift_id ?? '') == $shift->id ? 'selected' : '' }}>
                                 {{ $shift->shift_name }} ({{ $shift->start_time }} - {{ $shift->end_time }})
@@ -393,49 +396,7 @@
                 </div>
             </div>
 
-            <div class="form-row">
-                <!-- Login Time -->
-                <div class="form-group">
-                    <label for="login_time" class="form-label">Login Time</label>
-                    <div class="input-wrapper">
-                        <input type="time"
-                               id="login_time"
-                               name="login_time"
-                               value="{{ old('login_time', isset($attendanceLog) && $attendanceLog->login_time ? $attendanceLog->login_time->format('H:i') : '') }}"
-                               class="form-input @error('login_time') is-invalid @enderror">
-                        <span class="input-icon">
-                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
-                                <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                        </span>
-                    </div>
-                    @error('login_time')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
 
-                <!-- Logout Time -->
-                <div class="form-group">
-                    <label for="logout_time" class="form-label">Logout Time</label>
-                    <div class="input-wrapper">
-                        <input type="time"
-                               id="logout_time"
-                               name="logout_time"
-                               value="{{ old('logout_time', isset($attendanceLog) && $attendanceLog->logout_time ? $attendanceLog->logout_time->format('H:i') : '') }}"
-                               class="form-input @error('logout_time') is-invalid @enderror">
-                        <span class="input-icon">
-                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
-                                <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                        </span>
-                    </div>
-                    @error('logout_time')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
 
             <!-- Notes Textarea -->
             <div class="form-group full-width">

@@ -408,7 +408,64 @@ class AdminController extends Controller
     public function payroll()
     {
         $payrollReports = PayrollReport::with(['employee', 'generator'])->paginate(15);
-        return view('admin.payroll.index', compact('payrollReports'));
+
+        // Calculate total projected pay for all time based on accepted shifts
+        $totalProjectedPay = EmployeeShift::where('status', 'accepted')
+            ->with(['employee', 'shift'])
+            ->get()
+            ->sum(function ($shiftAssignment) {
+                if ($shiftAssignment->shift && $shiftAssignment->employee) {
+                    $startTime = $shiftAssignment->shift->start_time;
+                    $endTime = $shiftAssignment->shift->end_time;
+
+                    if ($endTime < $startTime) {
+                        $endTime = $endTime->addDay();
+                    }
+
+                    $hours = $endTime->diffInHours($startTime);
+                    return $hours * $shiftAssignment->employee->hourly_rate;
+                }
+                return 0;
+            });
+
+        // Get employees with their accepted shifts and calculated pay for all time
+        $employeesWithPay = User::employees()->active()
+            ->with(['employeeShifts' => function ($query) {
+                $query->where('status', 'accepted')
+                      ->with('shift');
+            }])
+            ->get()
+            ->map(function ($employee) {
+                $totalHours = 0;
+                $totalPay = 0;
+
+                foreach ($employee->employeeShifts as $shiftAssignment) {
+                    if ($shiftAssignment->shift) {
+                        $startTime = $shiftAssignment->shift->start_time;
+                        $endTime = $shiftAssignment->shift->end_time;
+
+                        if ($endTime < $startTime) {
+                            $endTime = $endTime->addDay();
+                        }
+
+                        $hours = $endTime->diffInHours($startTime);
+                        $totalHours += $hours;
+                        $totalPay += $hours * $employee->hourly_rate;
+                    }
+                }
+
+                $employee->calculated_hours = $totalHours;
+                $employee->calculated_pay = $totalPay;
+                $employee->shifts_count = $employee->employeeShifts->count();
+
+                return $employee;
+            })
+            ->filter(function ($employee) {
+                return $employee->shifts_count > 0;
+            })
+            ->sortByDesc('calculated_pay');
+
+        return view('admin.payroll.index', compact('payrollReports', 'totalProjectedPay', 'employeesWithPay'));
     }
 
     public function createPayroll()
