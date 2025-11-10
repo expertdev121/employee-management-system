@@ -354,7 +354,7 @@
                         <input type="time"
                                id="start_time"
                                name="start_time"
-                               value="{{ old('start_time', isset($shift) ? $shift->start_time : '') }}"
+                               value="{{ old('start_time', isset($shift) ? $shift->start_time->format('H:i') : '') }}"
                                class="form-input @error('start_time') is-invalid @enderror"
                                required>
                         <span class="input-icon">
@@ -378,7 +378,7 @@
                         <input type="time"
                                id="end_time"
                                name="end_time"
-                               value="{{ old('end_time', isset($shift) ? $shift->end_time : '') }}"
+                               value="{{ old('end_time', isset($shift) ? $shift->end_time->format('H:i') : '') }}"
                                class="form-input @error('end_time') is-invalid @enderror"
                                required>
                         <span class="input-icon">

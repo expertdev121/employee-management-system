@@ -139,6 +139,16 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Shift is not available for acceptance'], 400);
         }
 
+        // Check if shift is at full capacity
+        $currentAssignments = EmployeeShift::where('shift_id', $employeeShift->shift_id)
+            ->where('shift_date', $employeeShift->shift_date)
+            ->where('status', 'accepted')
+            ->count();
+
+        if ($currentAssignments >= $employeeShift->shift->max_capacity) {
+            return response()->json(['error' => 'Shift is at full capacity. Cannot accept this shift.'], 400);
+        }
+
         $employeeShift->update([
             'status' => 'accepted',
             'responded_at' => now(),

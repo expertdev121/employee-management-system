@@ -300,6 +300,16 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Employee is already assigned to this shift on the selected date.');
         }
 
+        // Check if shift is at full capacity
+        $currentAssignments = EmployeeShift::where('shift_id', $shift->id)
+            ->where('shift_date', $request->shift_date)
+            ->where('status', 'assigned')
+            ->count();
+
+        if ($currentAssignments >= $shift->max_capacity) {
+            return redirect()->back()->with('error', 'Shift is at full capacity. Cannot assign more employees.');
+        }
+
         EmployeeShift::create([
             'employee_id' => $request->employee_id,
             'shift_id' => $shift->id,
