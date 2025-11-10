@@ -367,7 +367,7 @@
                         <td>
                             <span class="capacity-badge">
                                 <i class="fas fa-clock" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
-                                {{ $shift->start_time->diffInHours($shift->end_time) }}h
+                                {{ $shift->duration_hours }}h
                             </span>
                         </td>
                         <td>
