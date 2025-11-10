@@ -252,7 +252,7 @@
                 @endif
 
                 <!-- Login Form -->
-                <form method="POST" action="{{ route('login') }}">
+                <form method="POST" action="{{ route('login') }}" id="login-form">
                     @csrf
 
                     <div>
@@ -365,5 +365,22 @@
             eyeOn.style.display = 'none';
         }
     }
+
+    // Prevent multiple login submissions
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('login-form');
+        const loginBtn = loginForm.querySelector('button[type="submit"]');
+
+        if (loginForm && loginBtn) {
+            loginForm.addEventListener('submit', function(e) {
+                if (loginBtn.disabled) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                loginBtn.disabled = true;
+            });
+        }
+    });
 </script>
 @endsection

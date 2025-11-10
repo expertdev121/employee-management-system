@@ -488,17 +488,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Accept shift buttons
     document.querySelectorAll('.accept-shift').forEach(button => {
         button.addEventListener('click', function() {
-            const shiftId = this.getAttribute('data-shift-id');
-            acceptShift(shiftId);
+            if (!this.disabled) {
+                const shiftId = this.getAttribute('data-shift-id');
+                acceptShift(shiftId);
+            }
         });
     });
 
     // Reject shift buttons
     document.querySelectorAll('.reject-shift').forEach(button => {
         button.addEventListener('click', function() {
-            currentShiftId = this.getAttribute('data-shift-id');
-            modal.style.display = 'block';
-            rejectionReason.focus();
+            if (!this.disabled) {
+                currentShiftId = this.getAttribute('data-shift-id');
+                modal.style.display = 'block';
+                rejectionReason.focus();
+            }
         });
     });
 
@@ -544,11 +548,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 location.reload();
             } else {
+                // Re-enable buttons on error
+                document.querySelectorAll('.accept-shift:disabled').forEach(button => {
+                    enableButton(button);
+                });
                 alert(data.error || 'An error occurred');
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            // Re-enable buttons on error
+            document.querySelectorAll('.accept-shift:disabled').forEach(button => {
+                enableButton(button);
+            });
             alert('An error occurred while accepting the shift');
         });
     }
@@ -570,11 +582,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentShiftId = null;
                 location.reload();
             } else {
+                // Re-enable buttons on error
+                document.querySelectorAll('.reject-shift:disabled').forEach(button => {
+                    enableButton(button);
+                });
                 alert(data.error || 'An error occurred');
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            // Re-enable buttons on error
+            document.querySelectorAll('.reject-shift:disabled').forEach(button => {
+                enableButton(button);
+            });
             alert('An error occurred while rejecting the shift');
         });
     }
