@@ -592,10 +592,6 @@
                 <div class="quick-action-icon">📅</div>
                 <div class="quick-action-text">Create Shift</div>
             </a>
-            <a href="{{ route('admin.reports.index') }}" class="quick-action-btn">
-                <div class="quick-action-icon">📊</div>
-                <div class="quick-action-text">View Reports</div>
-            </a>
             <a href="{{ route('admin.attendance.index') }}" class="quick-action-btn">
                 <div class="quick-action-icon">✓</div>
                 <div class="quick-action-text">Attendance Overview</div>

@@ -392,9 +392,42 @@
                                     </a>
                                 </li>
                             </ul>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none" onsubmit="return checkLogoutSubmission()">
                                 @csrf
                             </form>
+
+                            <script>
+                                // Prevent multiple logout submissions
+                                let logoutSubmitted = false;
+
+                                function checkLogoutSubmission() {
+                                    if (logoutSubmitted) {
+                                        return false;
+                                    }
+                                    logoutSubmitted = true;
+                                    return true;
+                                }
+
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const logoutForm = document.getElementById('logout-form');
+                                    const logoutLinks = document.querySelectorAll('a[href*="logout"], a[onclick*="logout-form"]');
+
+                                    logoutLinks.forEach(link => {
+                                        link.addEventListener('click', function(e) {
+                                            e.preventDefault();
+
+                                            if (logoutSubmitted || this.disabled) {
+                                                return false;
+                                            }
+
+                                            logoutSubmitted = true;
+                                            this.disabled = true;
+
+                                            logoutForm.submit();
+                                        });
+                                    });
+                                });
+                            </script>
                         </div>
                     @endauth
                 </div>
@@ -575,6 +608,64 @@
         let deleteUrl = '';
         let csrfToken = '{{ csrf_token() }}';
 
+        // Button disabling functionality
+        function disableButton(button, loadingText = 'Loading...') {
+            button.disabled = true;
+            button.dataset.originalText = button.innerHTML;
+            button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${loadingText}`;
+        }
+
+        function enableButton(button) {
+            button.disabled = false;
+            if (button.dataset.originalText) {
+                button.innerHTML = button.dataset.originalText;
+            }
+        }
+
+        // Disable buttons on form submission and AJAX requests
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle form submissions (only for non-login forms)
+            document.querySelectorAll('form').forEach(form => {
+                if (!form.action.includes('/login')) {
+                    form.addEventListener('submit', function(e) {
+                        const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+                        if (submitButton && !submitButton.disabled) {
+                            disableButton(submitButton, 'Submitting...');
+                        }
+                    });
+                }
+            });
+
+
+
+            // Handle AJAX requests for accept/reject shift buttons
+            document.querySelectorAll('.accept-shift, .reject-shift').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (!this.disabled) {
+                        disableButton(this, 'Processing...');
+                    }
+                });
+            });
+
+            // Re-enable buttons on AJAX errors
+            document.addEventListener('ajaxError', function(e) {
+                // Re-enable all disabled buttons on error
+                document.querySelectorAll('button:disabled, a:disabled').forEach(button => {
+                    enableButton(button);
+                });
+            });
+
+            // Re-enable buttons on page navigation (back/forward)
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    // Page was restored from cache, re-enable buttons
+                    document.querySelectorAll('button:disabled, a:disabled').forEach(button => {
+                        enableButton(button);
+                    });
+                }
+            });
+        });
+
         // Delete functions
         function deleteEmployee(id, name) {
             deleteUrl = '{{ route("admin.employees.index") }}/' + id;
@@ -652,15 +743,17 @@
             }
 
             // Close mobile sidebar on nav link click
-            const navLinks = sidebar.querySelectorAll('.menu-link');
-            navLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    if (window.innerWidth < 992) {
-                        sidebar.classList.remove('show');
-                        overlay.classList.remove('show');
-                    }
+            if (sidebar) {
+                const navLinks = sidebar.querySelectorAll('.menu-link');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth < 992) {
+                            sidebar.classList.remove('show');
+                            overlay.classList.remove('show');
+                        }
+                    });
                 });
-            });
+            }
 
             // Submenu toggle functionality
             const menuButtons = document.querySelectorAll('.menu-link[data-bs-toggle="collapse"]');

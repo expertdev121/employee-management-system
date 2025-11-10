@@ -507,7 +507,7 @@
                         <option value="" disabled selected>Select Status</option>
                         <option value="active" {{ old('status', $employee->status ?? 'active') == 'active' ? 'selected' : '' }}>Active</option>
                         <option value="inactive" {{ old('status', $employee->status ?? 'active') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        <option value="blocked" {{ old('status', $employee->status ?? 'active') == 'blocked' ? 'selected' : '' }}>Blocked</option>
+                        {{-- <option value="blocked" {{ old('status', $employee->status ?? 'active') == 'blocked' ? 'selected' : '' }}>Blocked</option> --}}
                     </select>
                     @error('status')
                         <div class="error-message">{{ $message }}</div>

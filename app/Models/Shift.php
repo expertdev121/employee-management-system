@@ -56,4 +56,17 @@ class Shift extends Model
     {
         return $query->latest()->paginate($perPage);
     }
+
+    public function getDurationHoursAttribute()
+    {
+        $start = $this->start_time;
+        $end = $this->end_time;
+
+        // If end time is before or equal to start time, assume it spans midnight
+        if ($end->lessThanOrEqualTo($start)) {
+            $end = $end->copy()->addDay();
+        }
+
+        return $start->diffInHours($end);
+    }
 }

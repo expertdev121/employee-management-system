@@ -335,6 +335,7 @@
                     <tr>
                         <th>Shift Name</th>
                         <th>Time</th>
+                        <th>Hours</th>
                         <th>Capacity</th>
                         <th>Location</th>
                         <th>Status</th>
@@ -360,8 +361,14 @@
                         <td>
                             <div class="time-range">
                                 <i class="fas fa-arrow-right"></i>
-                                <span>{{ $shift->start_time }} - {{ $shift->end_time }}</span>
+                                <span>{{ $shift->start_time->format('H:i') }} - {{ $shift->end_time->format('H:i') }}</span>
                             </div>
+                        </td>
+                        <td>
+                            <span class="capacity-badge">
+                                <i class="fas fa-clock" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
+                                {{ $shift->duration_hours }}h
+                            </span>
                         </td>
                         <td>
                             <span class="capacity-badge">
@@ -405,7 +412,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <div class="empty-state-icon">🕐</div>
                                 <div class="empty-state-text">No shifts found</div>

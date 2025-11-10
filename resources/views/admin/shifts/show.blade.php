@@ -307,10 +307,12 @@
             <h2>Shift Details</h2>
         </div>
         <div class="action-buttons-group">
+            @if($shift->status === 'active')
             <button type="button" class="btn-custom btn-primary-custom" data-bs-toggle="modal" data-bs-target="#assignEmployeeModal">
                 <i class="fas fa-user-plus"></i>
                 <span>Assign Employee</span>
             </button>
+            @endif
             <a href="{{ route('admin.shifts.edit', $shift) }}" class="btn-custom btn-warning-custom">
                 <i class="fas fa-edit"></i>
                 <span>Edit Shift</span>

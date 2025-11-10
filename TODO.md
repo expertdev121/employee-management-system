@@ -1,4 +1,0 @@
-- [x] Update employee shifts index view to hide "Start Shift" button for accepted shifts
-- [x] Fix attendanceLog relationship in EmployeeShift model to resolve SQL error
-- [x] Add payroll section to employee dashboard
-- [x] Create employee payroll page with full functionality
