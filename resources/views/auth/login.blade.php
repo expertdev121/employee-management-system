@@ -245,6 +245,12 @@
             </div>
 
             <div>
+                @if ($errors->has('login'))
+                    <div class="alert alert-danger" style="color: #ef4444; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;">
+                        {{ $errors->first('login') }}
+                    </div>
+                @endif
+
                 <!-- Login Form -->
                 <form method="POST" action="{{ route('login') }}">
                     @csrf

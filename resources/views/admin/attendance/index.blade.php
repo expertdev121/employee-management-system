@@ -329,7 +329,7 @@
     }
 </style>
 
-<div class="page-header">
+{{-- <div class="page-header">
     <div class="page-header-content">
         <div class="page-title">
             <i class="fas fa-calendar-check"></i>
@@ -340,7 +340,7 @@
             <span>Add Manual Entry</span>
         </a>
     </div>
-</div>
+</div> --}}
 
 <div class="dashboard-card">
     <div class="card-body">
