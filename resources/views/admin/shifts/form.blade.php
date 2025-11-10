@@ -413,8 +413,24 @@
                     @enderror
                 </div>
 
-                <!-- Location -->
+                <!-- Duration Hours -->
                 <div class="form-group">
+                    <label for="duration_hours" class="form-label">
+                        Duration (Hours)
+                    </label>
+                    <input type="text"
+                           id="duration_hours"
+                           name="duration_hours"
+                           value="{{ old('duration_hours', isset($shift) ? $shift->duration_hours : '') }}"
+                           class="form-input"
+                           placeholder="Auto-calculated"
+                           readonly>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <!-- Location -->
+                <div class="form-group full-width">
                     <label for="location" class="form-label">Location</label>
                     <input type="text"
                            id="location"
@@ -495,6 +511,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Calculate duration hours when start or end time changes
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    const durationInput = document.getElementById('duration_hours');
+
+    function calculateDuration() {
+        const startTime = startTimeInput.value;
+        const endTime = endTimeInput.value;
+
+        if (startTime && endTime) {
+            const start = new Date(`1970-01-01T${startTime}:00`);
+            const end = new Date(`1970-01-01T${endTime}:00`);
+
+            let diff = end - start;
+
+            // If end time is before start time, assume it spans midnight
+            if (diff <= 0) {
+                diff = (end - start) + (24 * 60 * 60 * 1000);
+            }
+
+            const hours = diff / (1000 * 60 * 60);
+            durationInput.value = hours.toFixed(1);
+        } else {
+            durationInput.value = '';
+        }
+    }
+
+    startTimeInput.addEventListener('change', calculateDuration);
+    endTimeInput.addEventListener('change', calculateDuration);
+
+    // Calculate duration on page load if values exist
+    calculateDuration();
 });
 </script>
 @endsection
