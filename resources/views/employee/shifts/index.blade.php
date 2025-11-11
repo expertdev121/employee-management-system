@@ -396,8 +396,13 @@
                         </td>
                         <td>
                             <div class="shift-date">
-                                <span class="shift-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                <span class="shift-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                @if($shift->shift_date)
+                                    <span class="shift-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
+                                    <span class="shift-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                @else
+                                    <span class="shift-date-main">Recurring</span>
+                                    <span class="shift-date-day">Ongoing</span>
+                                @endif
                             </div>
                         </td>
                         <td>

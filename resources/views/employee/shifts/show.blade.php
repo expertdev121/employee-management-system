@@ -305,7 +305,11 @@
                 <span class="detail-label">Shift Date</span>
                 <span class="detail-value">
                     <i class="fas fa-calendar-day"></i>
-                    {{ $employeeShift->shift_date->format('l, F j, Y') }}
+                    @if($employeeShift->shift_date)
+                        {{ $employeeShift->shift_date->format('l, F j, Y') }}
+                    @else
+                        Recurring Shift (No specific date)
+                    @endif
                 </span>
             </div>
 

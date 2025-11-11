@@ -17,13 +17,19 @@ class EmployeeController extends Controller
         $user = Auth::user();
 
         $todayShifts = EmployeeShift::where('employee_id', $user->id)
-            ->where('shift_date', today())
+            ->where(function ($query) {
+                $query->where('shift_date', today())
+                      ->orWhereNull('shift_date');
+            })
             ->whereIn('status', ['accepted', 'assigned'])
             ->with('shift')
             ->get();
 
         $upcomingShifts = EmployeeShift::where('employee_id', $user->id)
-            ->where('shift_date', '>', today())
+            ->where(function ($query) {
+                $query->where('shift_date', '>', today())
+                      ->orWhereNull('shift_date');
+            })
             ->whereIn('status', ['accepted', 'assigned'])
             ->with('shift')
             ->orderBy('shift_date')
@@ -140,10 +146,14 @@ class EmployeeController extends Controller
         }
 
         // Check if shift is at full capacity
-        $currentAssignments = EmployeeShift::where('shift_id', $employeeShift->shift_id)
-            ->where('shift_date', $employeeShift->shift_date)
-            ->where('status', 'accepted')
-            ->count();
+        $capacityQuery = EmployeeShift::where('shift_id', $employeeShift->shift_id)
+            ->where('status', 'accepted');
+
+        if ($employeeShift->shift_date) {
+            $capacityQuery->where('shift_date', $employeeShift->shift_date);
+        }
+
+        $currentAssignments = $capacityQuery->count();
 
         if ($currentAssignments >= $employeeShift->shift->max_capacity) {
             return response()->json(['error' => 'Shift is at full capacity. Cannot accept this shift.'], 400);

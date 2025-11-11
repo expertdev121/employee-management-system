@@ -286,28 +286,40 @@ class AdminController extends Controller
     {
         $request->validate([
             'employee_id' => 'required|exists:users,id',
-            'shift_date' => 'required|date',
+            'shift_date' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
 
-        // Check if employee is already assigned to this shift on the same date
-        $existingAssignment = EmployeeShift::where('employee_id', $request->employee_id)
-            ->where('shift_id', $shift->id)
-            ->where('shift_date', $request->shift_date)
-            ->first();
+        // Check if employee is already assigned to this shift on the same date (if date is provided)
+        if ($request->shift_date) {
+            $existingAssignment = EmployeeShift::where('employee_id', $request->employee_id)
+                ->where('shift_id', $shift->id)
+                ->where('shift_date', $request->shift_date)
+                ->first();
 
-        if ($existingAssignment) {
-            return redirect()->back()->with('error', 'Employee is already assigned to this shift on the selected date.');
-        }
+            if ($existingAssignment) {
+                return redirect()->back()->with('error', 'Employee is already assigned to this shift on the selected date.');
+            }
 
-        // Check if shift is at full capacity
-        $currentAssignments = EmployeeShift::where('shift_id', $shift->id)
-            ->where('shift_date', $request->shift_date)
-            ->where('status', 'assigned')
-            ->count();
+            // Check if shift is at full capacity for the specific date
+            $currentAssignments = EmployeeShift::where('shift_id', $shift->id)
+                ->where('shift_date', $request->shift_date)
+                ->where('status', 'assigned')
+                ->count();
 
-        if ($currentAssignments >= $shift->max_capacity) {
-            return redirect()->back()->with('error', 'Shift is at full capacity. Cannot assign more employees.');
+            if ($currentAssignments >= $shift->max_capacity) {
+                return redirect()->back()->with('error', 'Shift is at full capacity for the selected date. Cannot assign more employees.');
+            }
+        } else {
+            // For recurring shifts without date, check if employee is already assigned to this shift
+            $existingAssignment = EmployeeShift::where('employee_id', $request->employee_id)
+                ->where('shift_id', $shift->id)
+                ->whereNull('shift_date')
+                ->first();
+
+            if ($existingAssignment) {
+                return redirect()->back()->with('error', 'Employee is already assigned to this recurring shift.');
+            }
         }
 
         EmployeeShift::create([
