@@ -452,6 +452,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function acceptShift(shiftId) {
+        // Disable all accept buttons to prevent multiple clicks
+        document.querySelectorAll('.accept-shift').forEach(button => {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Accepting...';
+        });
+
         fetch(`/employee/shifts/${shiftId}/accept`, {
             method: 'POST',
             headers: {
@@ -462,22 +468,25 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                showMessage('Shift accepted successfully', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             } else {
                 // Re-enable buttons on error
-                document.querySelectorAll('.accept-shift:disabled').forEach(button => {
+                document.querySelectorAll('.accept-shift').forEach(button => {
                     enableButton(button);
                 });
-                alert(data.error || 'An error occurred');
+                showMessage(data.error || 'An error occurred', 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
             // Re-enable buttons on error
-            document.querySelectorAll('.accept-shift:disabled').forEach(button => {
+            document.querySelectorAll('.accept-shift').forEach(button => {
                 enableButton(button);
             });
-            showMessage(data.success || 'Shift accepted successfully', 'success');
+            showMessage('An error occurred while accepting the shift', 'error');
         });
     }
 

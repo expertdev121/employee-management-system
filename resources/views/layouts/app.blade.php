@@ -745,12 +745,12 @@
 
             document.body.appendChild(alertDiv);
 
-            // Auto remove after 5 seconds
+            // Auto remove after 3 seconds
             setTimeout(() => {
                 if (alertDiv.parentNode) {
                     alertDiv.remove();
                 }
-            }, 5000);
+            }, 3000);
         }
 
         // Sidebar functionality

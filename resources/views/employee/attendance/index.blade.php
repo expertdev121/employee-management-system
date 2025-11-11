@@ -416,25 +416,7 @@
     </div>
 </div>
 
-<!-- Current Status Cards -->
-<div class="stats-section">
-    <div class="stats-card">
-        <h3>{{ number_format($thisMonthHours, 1) }}</h3>
-        <p>This Month Hours</p>
-    </div>
-    <div class="stats-card">
-        <h3>{{ $acceptedShifts->count() }}</h3>
-        <p>Accepted Shifts</p>
-    </div>
-    <div class="stats-card">
-        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfMonth())->count() }}</h3>
-        <p>This Month Shifts</p>
-    </div>
-    <div class="stats-card">
-        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfWeek())->count() }}</h3>
-        <p>This Week Shifts</p>
-    </div>
-</div>
+
 
 <div class="dashboard-card">
     <div class="card-body">

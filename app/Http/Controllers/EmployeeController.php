@@ -8,6 +8,8 @@ use App\Models\BreakLog;
 use App\Models\PayrollReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class EmployeeController extends Controller
@@ -141,33 +143,81 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        if (!in_array($employeeShift->status, ['pending', 'assigned'])) {
-            return response()->json(['error' => 'Shift is not available for acceptance'], 400);
+        // Use database transaction to ensure atomicity
+        try {
+            return DB::transaction(function () use ($employeeShift) {
+                // Lock the record for update to prevent race conditions
+                $employeeShift = EmployeeShift::lockForUpdate()->find($employeeShift->id);
+
+                if (!$employeeShift) {
+                    return response()->json(['error' => 'Shift assignment not found'], 404);
+                }
+
+                if (!in_array($employeeShift->status, ['pending', 'assigned'])) {
+                    return response()->json(['error' => 'Shift is not available for acceptance. Current status: ' . $employeeShift->status], 400);
+                }
+
+                // Check if shift is at full capacity
+                $capacityQuery = EmployeeShift::where('shift_id', $employeeShift->shift_id)
+                    ->where('status', 'accepted');
+
+                if ($employeeShift->shift_date) {
+                    $capacityQuery->where('shift_date', $employeeShift->shift_date);
+                }
+
+                $currentAssignments = $capacityQuery->count();
+
+                if ($currentAssignments >= $employeeShift->shift->max_capacity) {
+                    return response()->json(['error' => 'Shift is at full capacity (' . $employeeShift->shift->max_capacity . ' employees max). Cannot accept this shift.'], 400);
+                }
+
+                // Update shift status
+                $employeeShift->update([
+                    'status' => 'accepted',
+                    'responded_at' => now(),
+                ]);
+
+                // Auto-add hours to attendance when shift is accepted
+                try {
+                    $this->addShiftHoursToAttendance($employeeShift);
+                } catch (\Exception $e) {
+                    // Log the attendance creation error
+                    Log::error('Failed to create attendance record for shift acceptance', [
+                        'employee_shift_id' => $employeeShift->id,
+                        'employee_id' => $employeeShift->employee_id,
+                        'shift_id' => $employeeShift->shift_id,
+                        'error' => $e->getMessage()
+                    ]);
+
+                    // If attendance creation fails, rollback the transaction
+                    throw new \Exception('Failed to create attendance record: ' . $e->getMessage());
+                }
+
+                return response()->json(['success' => 'Shift accepted successfully']);
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Handle database-specific errors
+            Log::error('Database error during shift acceptance', [
+                'employee_shift_id' => $employeeShift->id,
+                'error' => $e->getMessage(),
+                'code' => $e->getCode()
+            ]);
+
+            if ($e->getCode() == 23000) { // Integrity constraint violation
+                return response()->json(['error' => 'Database constraint violation. This shift may already be accepted or there\'s a data conflict.'], 400);
+            }
+
+            return response()->json(['error' => 'Database error occurred. Please try again.'], 500);
+        } catch (\Exception $e) {
+            // Handle any other exceptions
+            Log::error('Unexpected error during shift acceptance', [
+                'employee_shift_id' => $employeeShift->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json(['error' => 'An unexpected error occurred: ' . $e->getMessage()], 500);
         }
-
-        // Check if shift is at full capacity
-        $capacityQuery = EmployeeShift::where('shift_id', $employeeShift->shift_id)
-            ->where('status', 'accepted');
-
-        if ($employeeShift->shift_date) {
-            $capacityQuery->where('shift_date', $employeeShift->shift_date);
-        }
-
-        $currentAssignments = $capacityQuery->count();
-
-        if ($currentAssignments >= $employeeShift->shift->max_capacity) {
-            return response()->json(['error' => 'Shift is at full capacity. Cannot accept this shift.'], 400);
-        }
-
-        $employeeShift->update([
-            'status' => 'accepted',
-            'responded_at' => now(),
-        ]);
-
-        // Auto-add hours to attendance when shift is accepted
-        $this->addShiftHoursToAttendance($employeeShift);
-
-        return response()->json(['success' => 'Shift accepted successfully']);
     }
 
     public function rejectShift(Request $request, EmployeeShift $employeeShift)
@@ -270,6 +320,15 @@ class EmployeeController extends Controller
         $shift = $employeeShift->shift;
 
         if (!$shift) {
+            return;
+        }
+
+        // Skip attendance creation for recurring shifts without specific dates
+        if (!$employeeShift->shift_date) {
+            Log::info('Skipping attendance creation for recurring shift without date', [
+                'employee_shift_id' => $employeeShift->id,
+                'shift_id' => $shift->id,
+            ]);
             return;
         }
 
