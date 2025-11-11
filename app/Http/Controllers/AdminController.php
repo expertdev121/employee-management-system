@@ -235,7 +235,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'shift_name' => 'required|string|max:255',
-            'shift_type' => 'required|in:morning,evening,night,custom',
+            'shift_type' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'max_capacity' => 'required|integer|min:1',
@@ -262,7 +262,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'shift_name' => 'required|string|max:255',
-            'shift_type' => 'required|in:morning,evening,night,custom',
+            'shift_type' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'max_capacity' => 'required|integer|min:1',

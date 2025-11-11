@@ -49,34 +49,78 @@ class DatabaseSeeder extends Seeder
 
         // Create sample shifts
         Shift::create([
-            'shift_name' => 'Morning Shift',
-            'shift_type' => 'morning',
+            'shift_name' => 'Monday Shift',
+            'shift_type' => 'monday',
             'start_time' => '08:00:00',
             'end_time' => '16:00:00',
             'max_capacity' => 5,
-            'description' => 'Standard morning shift',
+            'description' => 'Standard Monday shift',
             'location' => 'Main Office',
             'status' => 'active',
         ]);
 
         Shift::create([
-            'shift_name' => 'Evening Shift',
-            'shift_type' => 'evening',
-            'start_time' => '16:00:00',
-            'end_time' => '00:00:00',
+            'shift_name' => 'Tuesday Shift',
+            'shift_type' => 'tuesday',
+            'start_time' => '08:00:00',
+            'end_time' => '16:00:00',
+            'max_capacity' => 5,
+            'description' => 'Standard Tuesday shift',
+            'location' => 'Main Office',
+            'status' => 'active',
+        ]);
+
+        Shift::create([
+            'shift_name' => 'Wednesday Shift',
+            'shift_type' => 'wednesday',
+            'start_time' => '08:00:00',
+            'end_time' => '16:00:00',
+            'max_capacity' => 5,
+            'description' => 'Standard Wednesday shift',
+            'location' => 'Main Office',
+            'status' => 'active',
+        ]);
+
+        Shift::create([
+            'shift_name' => 'Thursday Shift',
+            'shift_type' => 'thursday',
+            'start_time' => '08:00:00',
+            'end_time' => '16:00:00',
+            'max_capacity' => 5,
+            'description' => 'Standard Thursday shift',
+            'location' => 'Main Office',
+            'status' => 'active',
+        ]);
+
+        Shift::create([
+            'shift_name' => 'Friday Shift',
+            'shift_type' => 'friday',
+            'start_time' => '08:00:00',
+            'end_time' => '16:00:00',
+            'max_capacity' => 5,
+            'description' => 'Standard Friday shift',
+            'location' => 'Main Office',
+            'status' => 'active',
+        ]);
+
+        Shift::create([
+            'shift_name' => 'Saturday Shift',
+            'shift_type' => 'saturday',
+            'start_time' => '08:00:00',
+            'end_time' => '16:00:00',
             'max_capacity' => 3,
-            'description' => 'Standard evening shift',
+            'description' => 'Standard Saturday shift',
             'location' => 'Main Office',
             'status' => 'active',
         ]);
 
         Shift::create([
-            'shift_name' => 'Night Shift',
-            'shift_type' => 'night',
-            'start_time' => '00:00:00',
-            'end_time' => '08:00:00',
-            'max_capacity' => 2,
-            'description' => 'Standard night shift',
+            'shift_name' => 'Sunday Shift',
+            'shift_type' => 'sunday',
+            'start_time' => '08:00:00',
+            'end_time' => '16:00:00',
+            'max_capacity' => 3,
+            'description' => 'Standard Sunday shift',
             'location' => 'Main Office',
             'status' => 'active',
         ]);
