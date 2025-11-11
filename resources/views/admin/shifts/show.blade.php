@@ -430,7 +430,11 @@
                                     @if($assignment->shift_date)
                                         <div class="employee-card-item">
                                             <span class="employee-card-label">Assigned Date:</span>
-                                            <span class="employee-card-value">{{ $assignment->shift_date->format('M d, Y') }}</span>
+                                            @if($assignment->shift_date)
+                                                <span class="employee-card-value">{{ $assignment->shift_date->format('M d, Y') }}</span>
+                                            @else
+                                                <span class="employee-card-value">Recurring</span>
+                                            @endif
                                         </div>
                                     @else
                                         <div class="employee-card-item">

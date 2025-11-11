@@ -455,8 +455,16 @@
                     <tr>
                         <td>
                             <div class="attendance-date">
-                                <span class="attendance-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                <span class="attendance-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                @if($shift->shift_date)
+                                    <span class="attendance-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
+                                @else
+                                    <span class="attendance-date-main">Recurring</span>
+                                @endif
+                                @if($shift->shift_date)
+                                    <span class="attendance-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                @else
+                                    <span class="attendance-date-day">Ongoing</span>
+                                @endif
                             </div>
                         </td>
                         <td>

@@ -397,8 +397,16 @@
                         <td>
                             <div class="shift-date">
                                 @if($shift->shift_date)
-                                    <span class="shift-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                    <span class="shift-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                    @if($shift->shift_date)
+                                        <span class="shift-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
+                                    @else
+                                        <span class="shift-date-main">Recurring</span>
+                                    @endif
+                                    @if($shift->shift_date)
+                                        <span class="shift-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                    @else
+                                        <span class="shift-date-day">Ongoing</span>
+                                    @endif
                                 @else
                                     <span class="shift-date-main">Recurring</span>
                                     <span class="shift-date-day">Ongoing</span>
@@ -566,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.accept-shift:disabled').forEach(button => {
                 enableButton(button);
             });
-            alert('An error occurred while accepting the shift');
+            showMessage(data.success || 'Shift accepted successfully', 'success');
         });
     }
 
@@ -600,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.reject-shift:disabled').forEach(button => {
                 enableButton(button);
             });
-            alert('An error occurred while rejecting the shift');
+            showMessage(data.success || 'Shift rejected successfully', 'success');
         });
     }
 

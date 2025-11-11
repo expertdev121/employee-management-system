@@ -354,13 +354,7 @@
         <div class="stat-card-value">{{ $todayShifts->count() }}</div>
         <div class="stat-card-label">Today's Shifts</div>
     </div>
-    <div class="stat-card purple">
-        <div class="stat-card-icon">
-            <i class="fas fa-hourglass-half"></i>
-        </div>
-        <div class="stat-card-value">{{ $pendingRequests->count() }}</div>
-        <div class="stat-card-label">Pending Requests</div>
-    </div>
+
     <div class="stat-card orange">
         <div class="stat-card-icon">
             <i class="fas fa-clock"></i>
@@ -430,7 +424,11 @@
                             <div class="shift-item-title">{{ $shift->shift->shift_name }}</div>
                             <div class="shift-item-detail">
                                 <i class="fas fa-calendar"></i>
-                                <span>{{ $shift->shift_date->format('M d, Y') }}</span>
+                                @if($shift->shift_date)
+                                    <span>{{ $shift->shift_date->format('M d, Y') }}</span>
+                                @else
+                                    <span>Recurring</span>
+                                @endif
                             </div>
                             <div class="shift-item-detail">
                                 <i class="fas fa-clock"></i>

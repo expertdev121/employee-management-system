@@ -306,7 +306,11 @@
                 <span class="detail-value">
                     <i class="fas fa-calendar-day"></i>
                     @if($employeeShift->shift_date)
-                        {{ $employeeShift->shift_date->format('l, F j, Y') }}
+                        @if($employeeShift->shift_date)
+                            {{ $employeeShift->shift_date->format('l, F j, Y') }}
+                        @else
+                            Recurring Shift
+                        @endif
                     @else
                         Recurring Shift (No specific date)
                     @endif
@@ -473,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.accept-shift:disabled').forEach(button => {
                 enableButton(button);
             });
-            alert('An error occurred while accepting the shift');
+            showMessage(data.success || 'Shift accepted successfully', 'success');
         });
     }
 
@@ -506,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.reject-shift:disabled').forEach(button => {
                 enableButton(button);
             });
-            alert('An error occurred while rejecting the shift');
+            showMessage(data.success || 'Shift rejected successfully', 'success');
         });
     }
     @endif
