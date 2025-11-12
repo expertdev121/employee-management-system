@@ -416,25 +416,7 @@
     </div>
 </div>
 
-<!-- Current Status Cards -->
-<div class="stats-section">
-    <div class="stats-card">
-        <h3>{{ number_format($thisMonthHours, 1) }}</h3>
-        <p>This Month Hours</p>
-    </div>
-    <div class="stats-card">
-        <h3>{{ $acceptedShifts->count() }}</h3>
-        <p>Accepted Shifts</p>
-    </div>
-    <div class="stats-card">
-        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfMonth())->count() }}</h3>
-        <p>This Month Shifts</p>
-    </div>
-    <div class="stats-card">
-        <h3>{{ $acceptedShifts->where('shift_date', '>=', now()->startOfWeek())->count() }}</h3>
-        <p>This Week Shifts</p>
-    </div>
-</div>
+
 
 <div class="dashboard-card">
     <div class="card-body">
@@ -455,8 +437,16 @@
                     <tr>
                         <td>
                             <div class="attendance-date">
-                                <span class="attendance-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                <span class="attendance-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                @if($shift->shift_date)
+                                    <span class="attendance-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
+                                @else
+                                    <span class="attendance-date-main">Recurring</span>
+                                @endif
+                                @if($shift->shift_date)
+                                    <span class="attendance-date-day">{{ $shift->shift_date->format('l') }}</span>
+                                @else
+                                    <span class="attendance-date-day">Ongoing</span>
+                                @endif
                             </div>
                         </td>
                         <td>

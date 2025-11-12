@@ -429,7 +429,11 @@
                                 @if($shift->shift_date)
                                     <div class="shift-card-item">
                                         <span class="shift-card-label">Assigned Date:</span>
-                                        <span class="shift-card-value">{{ $shift->shift_date->format('M d, Y') }}</span>
+                                        @if($shift->shift_date)
+                                            <span class="shift-card-value">{{ $shift->shift_date->format('M d, Y') }}</span>
+                                        @else
+                                            <span class="shift-card-value">Recurring</span>
+                                        @endif
                                     </div>
                                 @endif
                             </div>

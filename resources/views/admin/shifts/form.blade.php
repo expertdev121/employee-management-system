@@ -333,10 +333,13 @@
                             class="form-select @error('shift_type') is-invalid @enderror"
                             required>
                         <option value="" disabled selected>Select Shift Type</option>
-                        <option value="morning" {{ old('shift_type', $shift->shift_type ?? '') == 'morning' ? 'selected' : '' }}>Morning</option>
-                        <option value="evening" {{ old('shift_type', $shift->shift_type ?? '') == 'evening' ? 'selected' : '' }}>Evening</option>
-                        <option value="night" {{ old('shift_type', $shift->shift_type ?? '') == 'night' ? 'selected' : '' }}>Night</option>
-                        <option value="custom" {{ old('shift_type', $shift->shift_type ?? '') == 'custom' ? 'selected' : '' }}>Custom</option>
+                        <option value="monday" {{ old('shift_type', $shift->shift_type ?? '') == 'monday' ? 'selected' : '' }}>Monday</option>
+                        <option value="tuesday" {{ old('shift_type', $shift->shift_type ?? '') == 'tuesday' ? 'selected' : '' }}>Tuesday</option>
+                        <option value="wednesday" {{ old('shift_type', $shift->shift_type ?? '') == 'wednesday' ? 'selected' : '' }}>Wednesday</option>
+                        <option value="thursday" {{ old('shift_type', $shift->shift_type ?? '') == 'thursday' ? 'selected' : '' }}>Thursday</option>
+                        <option value="friday" {{ old('shift_type', $shift->shift_type ?? '') == 'friday' ? 'selected' : '' }}>Friday</option>
+                        <option value="saturday" {{ old('shift_type', $shift->shift_type ?? '') == 'saturday' ? 'selected' : '' }}>Saturday</option>
+                        <option value="sunday" {{ old('shift_type', $shift->shift_type ?? '') == 'sunday' ? 'selected' : '' }}>Sunday</option>
                     </select>
                     @error('shift_type')
                         <div class="error-message">{{ $message }}</div>

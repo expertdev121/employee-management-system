@@ -74,12 +74,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // Payroll Routes
     Route::get('/admin/payroll', [AdminController::class, 'payroll'])->name('admin.payroll.index');
+    Route::get('/admin/payroll/export', [App\Http\Controllers\AdminController::class, 'exportPayroll'])
+        ->name('admin.payroll.export');
     Route::get('/admin/payroll/create', [AdminController::class, 'createPayroll'])->name('admin.payroll.create');
     Route::post('/admin/payroll', [AdminController::class, 'storePayroll'])->name('admin.payroll.store');
     Route::get('/admin/payroll/{payrollReport}', [AdminController::class, 'showPayroll'])->name('admin.payroll.show');
     Route::get('/admin/payroll/{payrollReport}/edit', [AdminController::class, 'editPayroll'])->name('admin.payroll.edit');
     Route::put('/admin/payroll/{payrollReport}', [AdminController::class, 'updatePayroll'])->name('admin.payroll.update');
     Route::delete('/admin/payroll/{payrollReport}', [AdminController::class, 'destroyPayroll'])->name('admin.payroll.destroy');
+
 
     Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports.index');
     Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings.index');

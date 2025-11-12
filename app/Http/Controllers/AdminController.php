@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Request as FacadesRequest;
 
 class AdminController extends Controller
 {
@@ -235,7 +236,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'shift_name' => 'required|string|max:255',
-            'shift_type' => 'required|in:morning,evening,night,custom',
+            'shift_type' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'max_capacity' => 'required|integer|min:1',
@@ -262,7 +263,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'shift_name' => 'required|string|max:255',
-            'shift_type' => 'required|in:morning,evening,night,custom',
+            'shift_type' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'max_capacity' => 'required|integer|min:1',
@@ -286,28 +287,40 @@ class AdminController extends Controller
     {
         $request->validate([
             'employee_id' => 'required|exists:users,id',
-            'shift_date' => 'required|date',
+            'shift_date' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
 
-        // Check if employee is already assigned to this shift on the same date
-        $existingAssignment = EmployeeShift::where('employee_id', $request->employee_id)
-            ->where('shift_id', $shift->id)
-            ->where('shift_date', $request->shift_date)
-            ->first();
+        // Check if employee is already assigned to this shift on the same date (if date is provided)
+        if ($request->shift_date) {
+            $existingAssignment = EmployeeShift::where('employee_id', $request->employee_id)
+                ->where('shift_id', $shift->id)
+                ->where('shift_date', $request->shift_date)
+                ->first();
 
-        if ($existingAssignment) {
-            return redirect()->back()->with('error', 'Employee is already assigned to this shift on the selected date.');
-        }
+            if ($existingAssignment) {
+                return redirect()->back()->with('error', 'Employee is already assigned to this shift on the selected date.');
+            }
 
-        // Check if shift is at full capacity
-        $currentAssignments = EmployeeShift::where('shift_id', $shift->id)
-            ->where('shift_date', $request->shift_date)
-            ->where('status', 'assigned')
-            ->count();
+            // Check if shift is at full capacity for the specific date
+            $currentAssignments = EmployeeShift::where('shift_id', $shift->id)
+                ->where('shift_date', $request->shift_date)
+                ->where('status', 'assigned')
+                ->count();
 
-        if ($currentAssignments >= $shift->max_capacity) {
-            return redirect()->back()->with('error', 'Shift is at full capacity. Cannot assign more employees.');
+            if ($currentAssignments >= $shift->max_capacity) {
+                return redirect()->back()->with('error', 'Shift is at full capacity for the selected date. Cannot assign more employees.');
+            }
+        } else {
+            // For recurring shifts without date, check if employee is already assigned to this shift
+            $existingAssignment = EmployeeShift::where('employee_id', $request->employee_id)
+                ->where('shift_id', $shift->id)
+                ->whereNull('shift_date')
+                ->first();
+
+            if ($existingAssignment) {
+                return redirect()->back()->with('error', 'Employee is already assigned to this recurring shift.');
+            }
         }
 
         EmployeeShift::create([
@@ -415,34 +428,37 @@ class AdminController extends Controller
     }
 
     // Payroll CRUD
-    public function payroll()
+    public function payroll(Request $request)
     {
-        $payrollReports = PayrollReport::with(['employee', 'generator'])->paginate(15);
+        $employeeId = $request->get('employee_id');
+
+        $payrollReports = PayrollReport::with(['employee', 'generator'])
+            ->when($employeeId, fn($q) => $q->where('employee_id', $employeeId))
+            ->paginate(15);
 
         // Calculate total projected pay for all time based on accepted shifts
-        $totalProjectedPay = EmployeeShift::where('status', 'accepted')
+        $acceptedShifts = EmployeeShift::where('status', 'accepted')
+            ->when($employeeId, fn($q) => $q->where('employee_id', $employeeId))
             ->with(['employee', 'shift'])
-            ->get()
-            ->sum(function ($shiftAssignment) {
-                if ($shiftAssignment->shift && $shiftAssignment->employee) {
-                    $startTime = $shiftAssignment->shift->start_time;
-                    $endTime = $shiftAssignment->shift->end_time;
+            ->get();
 
-                    if ($endTime < $startTime) {
-                        $endTime = $endTime->addDay();
-                    }
-
-                    $hours = $endTime->diffInHours($startTime);
-                    return $hours * $shiftAssignment->employee->hourly_rate;
+        $totalProjectedPay = $acceptedShifts->sum(function ($shiftAssignment) {
+            if ($shiftAssignment->shift && $shiftAssignment->employee) {
+                $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
+                $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
+                if ($endTime->lessThan($startTime)) {
+                    $endTime->addDay();
                 }
-                return 0;
-            });
+                $hours = $endTime->diffInHours($startTime);
+                return $hours * $shiftAssignment->employee->hourly_rate;
+            }
+            return 0;
+        });
 
-        // Get employees with their accepted shifts and calculated pay for all time
         $employeesWithPay = User::employees()->active()
+            ->when($employeeId, fn($q) => $q->where('id', $employeeId))
             ->with(['employeeShifts' => function ($query) {
-                $query->where('status', 'accepted')
-                      ->with('shift');
+                $query->where('status', 'accepted')->with('shift');
             }])
             ->get()
             ->map(function ($employee) {
@@ -451,13 +467,11 @@ class AdminController extends Controller
 
                 foreach ($employee->employeeShifts as $shiftAssignment) {
                     if ($shiftAssignment->shift) {
-                        $startTime = $shiftAssignment->shift->start_time;
-                        $endTime = $shiftAssignment->shift->end_time;
-
-                        if ($endTime < $startTime) {
-                            $endTime = $endTime->addDay();
+                        $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
+                        $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
+                        if ($endTime->lessThan($startTime)) {
+                            $endTime->addDay();
                         }
-
                         $hours = $endTime->diffInHours($startTime);
                         $totalHours += $hours;
                         $totalPay += $hours * $employee->hourly_rate;
@@ -467,15 +481,20 @@ class AdminController extends Controller
                 $employee->calculated_hours = $totalHours;
                 $employee->calculated_pay = $totalPay;
                 $employee->shifts_count = $employee->employeeShifts->count();
-
                 return $employee;
             })
-            ->filter(function ($employee) {
-                return $employee->shifts_count > 0;
-            })
+            ->filter(fn($employee) => $employee->shifts_count > 0)
             ->sortByDesc('calculated_pay');
 
-        return view('admin.payroll.index', compact('payrollReports', 'totalProjectedPay', 'employeesWithPay'));
+        $employees = User::employees()->active()->get();
+
+        return view('admin.payroll.index', compact(
+            'payrollReports',
+            'totalProjectedPay',
+            'employeesWithPay',
+            'employees',
+            'employeeId'
+        ));
     }
 
     public function createPayroll()
@@ -925,5 +944,68 @@ class AdminController extends Controller
             return '"' . addslashes($value) . '"';
         }
         return $value;
+    }
+
+    public function exportPayroll(Request $request)
+    {
+        $filename = 'employee_payroll_' . now()->format('Y-m-d_H-i-s') . '.csv';
+
+        return response()->streamDownload(function () {
+            $handle = fopen('php://output', 'w');
+
+            // Write CSV Header
+            fputcsv($handle, ['Employee Name', 'Email', 'Shifts Count', 'Total Hours', 'Hourly Rate', 'Total Pay']);
+
+            // Get employees with accepted shifts and calculated pay
+            $employees = User::employees()->active()
+                ->with(['employeeShifts' => function ($query) {
+                    $query->where('status', 'accepted')->with('shift');
+                }])
+                ->get()
+                ->map(function ($employee) {
+                    $totalHours = 0;
+                    $totalPay = 0;
+
+                    foreach ($employee->employeeShifts as $shiftAssignment) {
+                        if ($shiftAssignment->shift) {
+                            $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
+                            $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
+                            if ($endTime->lessThan($startTime)) {
+                                $endTime->addDay();
+                            }
+                            $hours = $endTime->diffInHours($startTime);
+                            $totalHours += $hours;
+                            $totalPay += $hours * $employee->hourly_rate;
+                        }
+                    }
+
+                    return [
+                        'name' => $employee->name,
+                        'email' => $employee->email,
+                        'shifts_count' => $employee->employeeShifts->count(),
+                        'calculated_hours' => $totalHours,
+                        'hourly_rate' => $employee->hourly_rate,
+                        'calculated_pay' => $totalPay,
+                    ];
+                })
+                ->filter(fn($employee) => $employee['shifts_count'] > 0);
+
+            // Write employee rows
+            foreach ($employees as $emp) {
+                fputcsv($handle, [
+                    $emp['name'],
+                    $emp['email'],
+                    $emp['shifts_count'],
+                    $emp['calculated_hours'] . 'h',
+                    '$' . number_format($emp['hourly_rate'], 2),
+                    '$' . number_format($emp['calculated_pay'], 2),
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }

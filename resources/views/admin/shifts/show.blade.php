@@ -430,7 +430,16 @@
                                     @if($assignment->shift_date)
                                         <div class="employee-card-item">
                                             <span class="employee-card-label">Assigned Date:</span>
-                                            <span class="employee-card-value">{{ $assignment->shift_date->format('M d, Y') }}</span>
+                                            @if($assignment->shift_date)
+                                                <span class="employee-card-value">{{ $assignment->shift_date->format('M d, Y') }}</span>
+                                            @else
+                                                <span class="employee-card-value">Recurring</span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <div class="employee-card-item">
+                                            <span class="employee-card-label">Assignment Type:</span>
+                                            <span class="employee-card-value">Recurring Shift</span>
                                         </div>
                                     @endif
                                 </div>
@@ -524,14 +533,7 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="mb-3">
-                        <label for="shift_date" class="form-label">Shift Date <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control @error('shift_date') is-invalid @enderror"
-                               id="shift_date" name="shift_date" value="{{ old('shift_date', date('Y-m-d')) }}" required>
-                        @error('shift_date')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
+
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notes</label>
                         <textarea class="form-control @error('notes') is-invalid @enderror"

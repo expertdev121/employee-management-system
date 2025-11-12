@@ -47,6 +47,11 @@ class Shift extends Model
         return $query->where('shift_type', $type);
     }
 
+    public function scopeByDay($query, $day)
+    {
+        return $query->where('shift_type', $day);
+    }
+
     public function scopePaginateShifts($query, $perPage = 15)
     {
         return $query->active()->latest()->paginate($perPage);

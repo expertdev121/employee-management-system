@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->foreignId('employee_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('shift_id')->constrained('shifts')->onDelete('cascade');
             $table->date('shift_date');
-            $table->enum('status', ['assigned', 'accepted', 'rejected', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'assigned', 'accepted', 'rejected', 'cancelled'])->default('pending');
             $table->text('rejection_reason')->nullable();
             $table->timestamp('responded_at')->nullable();
             $table->timestamps();

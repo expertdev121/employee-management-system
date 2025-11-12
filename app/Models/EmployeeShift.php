@@ -48,6 +48,16 @@ class EmployeeShift extends Model
         return $query->where('shift_date', $date);
     }
 
+    public function scopeWithoutDate($query)
+    {
+        return $query->whereNull('shift_date');
+    }
+
+    public function scopeWithDate($query)
+    {
+        return $query->whereNotNull('shift_date');
+    }
+
     public function scopePaginateEmployeeShifts($query, $perPage = 15)
     {
         return $query->with(['employee', 'shift'])->latest()->paginate($perPage);
@@ -61,6 +71,8 @@ class EmployeeShift extends Model
     public function attendanceLog()
     {
         return $this->hasOne(\App\Models\AttendanceLog::class, 'employee_id', 'employee_id')
-            ->whereColumn('attendance_date', 'shift_date');
+            ->when($this->shift_date, function ($query) {
+                return $query->where('attendance_date', $this->shift_date);
+            });
     }
 }

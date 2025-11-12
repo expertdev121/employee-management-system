@@ -359,7 +359,7 @@
                                 </td>
                                 <td>
                                     <div class="request-description">
-                                        {{ $request->description ?? 'Shift request for ' . $request->shift_date->format('M d, Y') }}
+                                        {{ $request->description ?? ($request->shift_date ? 'Shift request for ' . $request->shift_date->format('M d, Y') : 'Recurring shift request') }}
                                     </div>
                                 </td>
                                 <td>

@@ -367,7 +367,7 @@
     }
 </style>
 
-<div class="page-header">
+{{-- <div class="page-header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h1>Admin Dashboard 👨‍💼</h1>
@@ -380,7 +380,7 @@
             </a>
         </div>
     </div>
-</div>
+</div> --}}
 
 <!-- Statistics Cards -->
 <div class="stats-grid">
@@ -402,15 +402,7 @@
         <div class="stat-card-value">{{ $totalShifts }}</div>
         <div class="stat-card-label">Active Shifts</div>
     </div>
-    <div class="stat-card orange">
-        <div class="stat-card-header">
-            <div class="stat-card-icon">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-        </div>
-        <div class="stat-card-value">{{ $pendingShiftRequests }}</div>
-        <div class="stat-card-label">Pending Requests</div>
-    </div>
+
     <div class="stat-card green">
         <div class="stat-card-header">
             <div class="stat-card-icon">
@@ -507,7 +499,11 @@
                                 </div>
                                 <div class="request-card-detail">
                                     <i class="fas fa-calendar"></i>
-                                    <span>{{ $shift->shift_date->format('M d, Y') }}</span>
+                                    @if($shift->shift_date)
+                                        <span>{{ $shift->shift_date->format('M d, Y') }}</span>
+                                    @else
+                                        <span>Recurring</span>
+                                    @endif
                                 </div>
                             </div>
                             <div class="request-actions">
@@ -548,7 +544,11 @@
                                  </div>
                                 <div class="request-card-detail">
                                     <i class="fas fa-calendar"></i>
-                                    <span>{{ $shift->shift_date->format('M d, Y') }}</span>
+                                    @if($shift->shift_date)
+                                        <span>{{ $shift->shift_date->format('M d, Y') }}</span>
+                                    @else
+                                        <span>Recurring</span>
+                                    @endif
                                 </div>
                                 @if($shift->rejection_reason)
                                 <div class="request-card-detail">
