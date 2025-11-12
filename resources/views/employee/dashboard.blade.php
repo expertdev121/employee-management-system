@@ -558,10 +558,10 @@
                 <i class="fas fa-calendar"></i>
                 <span>View Shifts</span>
             </a>
-            <a href="{{ route('employee.requests.index') }}" class="quick-action-btn">
+            {{-- <a href="{{ route('employee.requests.index') }}" class="quick-action-btn">
                 <i class="fas fa-list"></i>
                 <span>View Requests</span>
-            </a>
+            </a> --}}
             <a href="{{ route('employee.profile.edit') }}" class="quick-action-btn">
                 <i class="fas fa-user"></i>
                 <span>Edit Profile</span>

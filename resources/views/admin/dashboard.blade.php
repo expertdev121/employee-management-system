@@ -367,7 +367,7 @@
     }
 </style>
 
-<div class="page-header">
+{{-- <div class="page-header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h1>Admin Dashboard 👨‍💼</h1>
@@ -380,7 +380,7 @@
             </a>
         </div>
     </div>
-</div>
+</div> --}}
 
 <!-- Statistics Cards -->
 <div class="stats-grid">

@@ -422,7 +422,7 @@
                     @endif
                 </div>
 
-                <div class="info-section">
+                {{-- <div class="info-section">
                     <h4 class="section-title">
                         <i class="fas fa-user-check"></i>
                         Approval Information
@@ -445,7 +445,7 @@
                             <p>Not yet approved</p>
                         </div>
                     @endif
-                </div>
+                </div> --}}
 
                 <div class="info-section">
                     <h4 class="section-title">
