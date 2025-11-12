@@ -272,42 +272,44 @@
     </div>
 </div>
 
-<!-- Attendance History -->
+<!-- Payroll Records -->
 <div class="dashboard-card">
     <div class="card-body">
         <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-            <h5 style="margin: 0; color: #1f2937; font-weight: 600;">Attendance History</h5>
-            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Your complete attendance and earnings history</p>
+            <h5 style="margin: 0; color: #1f2937; font-weight: 600;">Payroll Records</h5>
+            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Your accepted shifts and calculated earnings</p>
         </div>
         <div class="table-responsive">
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Shift</th>
-                        <th>Hours Worked</th>
-                        <th>Pay Rate</th>
+                        <th>Shift Date</th>
+                        <th>Shift Name</th>
+                        <th>Hours</th>
+                        <th>Hourly Rate</th>
                         <th>Total Pay</th>
+                        <th>Status</th>
+                        <th>Accepted At</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($attendanceRecords as $attendance)
+                    @forelse($payrollRecords as $payroll)
                         <tr>
                             <td>
                                 <div style="font-weight: 500; color: #1f2937;">
-                                    {{ $attendance->attendance_date->format('M d, Y') }}
+                                    {{ $payroll->shift_date->format('M d, Y') }}
                                 </div>
                                 <div style="font-size: 0.875rem; color: #6b7280;">
-                                    {{ $attendance->attendance_date->format('l') }}
+                                    {{ $payroll->shift_date->format('l') }}
                                 </div>
                             </td>
                             <td>
-                                @if($attendance->shift)
+                                @if($payroll->employeeShift && $payroll->employeeShift->shift)
                                     <div style="font-weight: 500; color: #1f2937;">
-                                        {{ $attendance->shift->shift_name }}
+                                        {{ $payroll->employeeShift->shift->shift_name }}
                                     </div>
                                     <div style="font-size: 0.875rem; color: #6b7280;">
-                                        {{ $attendance->shift->start_time->format('H:i') }} - {{ $attendance->shift->end_time->format('H:i') }}
+                                        {{ $payroll->employeeShift->shift->start_time->format('H:i') }} - {{ $payroll->employeeShift->shift->end_time->format('H:i') }}
                                     </div>
                                 @else
                                     <span style="color: #9ca3af;">N/A</span>
@@ -315,23 +317,33 @@
                             </td>
                             <td>
                                 <div style="font-weight: 600; color: #1f2937;">
-                                    {{ number_format($attendance->total_hours, 1) }}h
+                                    {{ number_format($payroll->total_hours, 1) }}h
                                 </div>
                             </td>
                             <td>
-                                <span class="amount-display">${{ number_format($user->hourly_rate, 2) }}/hr</span>
+                                <span class="amount-display">${{ number_format($payroll->hourly_rate, 2) }}/hr</span>
                             </td>
                             <td>
-                                <span class="amount-display amount-primary">${{ number_format($attendance->total_hours * $user->hourly_rate, 2) }}</span>
+                                <span class="amount-display amount-primary">${{ number_format($payroll->total_pay, 2) }}</span>
+                            </td>
+                            <td>
+                                <span class="badge-custom badge-success">
+                                    {{ ucfirst($payroll->status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="font-size: 0.875rem; color: #6b7280;">
+                                    {{ $payroll->accepted_at->format('M d, H:i') }}
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5">
+                            <td colspan="7">
                                 <div class="empty-state">
-                                    <div class="empty-state-icon">📅</div>
-                                    <div class="empty-state-text">No attendance records found</div>
-                                    <div class="empty-state-subtext">Your attendance records will appear here once you start working shifts</div>
+                                    <div class="empty-state-icon">💰</div>
+                                    <div class="empty-state-text">No payroll records found</div>
+                                    <div class="empty-state-subtext">Your payroll records will appear here once you accept shifts</div>
                                 </div>
                             </td>
                         </tr>
@@ -340,9 +352,9 @@
             </table>
         </div>
 
-        @if($attendanceRecords->hasPages())
+        @if($payrollRecords->hasPages())
         <div style="display: flex; justify-content: center; padding: 1.5rem; border-top: 1px solid #e5e7eb;">
-            {{ $attendanceRecords->links() }}
+            {{ $payrollRecords->links() }}
         </div>
         @endif
     </div>

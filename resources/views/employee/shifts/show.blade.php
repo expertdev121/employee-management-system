@@ -475,7 +475,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Re-enable buttons on error
                 document.querySelectorAll('.accept-shift').forEach(button => {
-                    enableButton(button);
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-check"></i> Accept Shift';
                 });
                 showMessage(data.error || 'An error occurred', 'error');
             }
@@ -484,7 +485,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             // Re-enable buttons on error
             document.querySelectorAll('.accept-shift').forEach(button => {
-                enableButton(button);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-check"></i> Accept Shift';
             });
             showMessage('An error occurred while accepting the shift', 'error');
         });

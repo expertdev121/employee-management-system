@@ -24,7 +24,12 @@
 - [x] Add loading state with spinner
 - [x] Re-enable button only on error
 
-### 3. Model Enhancement (EmployeeShift.php)
+### 3. Database Migration Fix ✅
+- [x] Fixed table name from 'employee_payroll' to 'employee_payrolls'
+- [x] Fixed unique constraint name length issue
+- [x] Migrated successfully
+
+### 4. Model Enhancement (EmployeeShift.php)
 - [ ] Add scope for checking available shifts
 - [ ] Improve relationship handling
 

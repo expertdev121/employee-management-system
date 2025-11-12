@@ -6,6 +6,7 @@ use App\Models\EmployeeShift;
 use App\Models\AttendanceLog;
 use App\Models\BreakLog;
 use App\Models\PayrollReport;
+use App\Models\EmployeePayroll;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -193,6 +194,25 @@ class EmployeeController extends Controller
                     throw new \Exception('Failed to create attendance record: ' . $e->getMessage());
                 }
 
+                // Load relationships needed for payroll creation
+                $employeeShift->load(['employee', 'shift']);
+
+                // Create employee payroll record
+                try {
+                    $this->createEmployeePayrollRecord($employeeShift);
+                } catch (\Exception $e) {
+                    // Log the payroll creation error
+                    Log::error('Failed to create payroll record for shift acceptance', [
+                        'employee_shift_id' => $employeeShift->id,
+                        'employee_id' => $employeeShift->employee_id,
+                        'shift_id' => $employeeShift->shift_id,
+                        'error' => $e->getMessage()
+                    ]);
+
+                    // If payroll creation fails, rollback the transaction
+                    throw new \Exception('Failed to create payroll record: ' . $e->getMessage());
+                }
+
                 return response()->json(['success' => 'Shift accepted successfully']);
             });
         } catch (\Illuminate\Database\QueryException $e) {
@@ -260,49 +280,32 @@ class EmployeeController extends Controller
     {
         $user = Auth::user();
 
-        // Get monthly pay based on attendance and projections
+        // Get monthly pay based on payroll records
         $currentMonth = now()->startOfMonth();
         $previousMonth = now()->subMonth()->startOfMonth();
 
-        // Calculate previous month hours and pay from actual attendance
-        $previousMonthAttendance = AttendanceLog::where('employee_id', $user->id)
-            ->where('status', 'present')
-            ->whereBetween('attendance_date', [$previousMonth, $previousMonth->copy()->endOfMonth()])
+        // Calculate previous month hours and pay from payroll records
+        $previousMonthPayroll = EmployeePayroll::where('employee_id', $user->id)
+            ->where('status', 'active')
+            ->whereBetween('shift_date', [$previousMonth, $previousMonth->copy()->endOfMonth()])
             ->get();
 
-        $previousMonthHours = $previousMonthAttendance->sum('total_hours');
-        $previousMonthPay = $previousMonthHours * $user->hourly_rate;
+        $previousMonthHours = $previousMonthPayroll->sum('total_hours');
+        $previousMonthPay = $previousMonthPayroll->sum('total_pay');
 
-        // Calculate current month projection from accepted shifts
-        $currentMonthShifts = EmployeeShift::where('employee_id', $user->id)
-            ->where('status', 'accepted')
+        // Calculate current month projection from payroll records
+        $currentMonthPayroll = EmployeePayroll::where('employee_id', $user->id)
+            ->where('status', 'active')
             ->whereBetween('shift_date', [$currentMonth, $currentMonth->copy()->endOfMonth()])
-            ->with('shift')
             ->get();
 
-        // Calculate current month hours and pay
-        $currentMonthHours = 0;
-        $currentMonthPay = 0;
+        $currentMonthHours = $currentMonthPayroll->sum('total_hours');
+        $currentMonthPay = $currentMonthPayroll->sum('total_pay');
 
-        foreach ($currentMonthShifts as $shiftAssignment) {
-            if ($shiftAssignment->shift) {
-                $startTime = $shiftAssignment->shift->start_time;
-                $endTime = $shiftAssignment->shift->end_time;
-
-                if ($endTime < $startTime) {
-                    $endTime = $endTime->addDay();
-                }
-
-                $hours = $endTime->diffInHours($startTime);
-                $currentMonthHours += $hours;
-                $currentMonthPay += $hours * $user->hourly_rate;
-            }
-        }
-
-        // Get all attendance records with pagination
-        $attendanceRecords = AttendanceLog::where('employee_id', $user->id)
-            ->where('status', 'present')
-            ->orderBy('attendance_date', 'desc')
+        // Get all payroll records with pagination
+        $payrollRecords = EmployeePayroll::where('employee_id', $user->id)
+            ->with(['employeeShift.shift'])
+            ->orderBy('shift_date', 'desc')
             ->paginate(12); // 12 months per page
 
         return view('employee.payroll.index', compact(
@@ -310,7 +313,7 @@ class EmployeeController extends Controller
             'previousMonthPay',
             'currentMonthHours',
             'currentMonthPay',
-            'attendanceRecords',
+            'payrollRecords',
             'user'
         ));
     }
@@ -367,6 +370,66 @@ class EmployeeController extends Controller
                 'total_hours_minutes' => $totalMinutes,
                 'status' => 'present',
                 'is_manual_entry' => false,
+            ]);
+        }
+    }
+
+    private function createEmployeePayrollRecord(EmployeeShift $employeeShift)
+    {
+        $shift = $employeeShift->shift;
+        $employee = $employeeShift->employee;
+
+        if (!$shift || !$employee) {
+            return;
+        }
+
+        // Skip payroll creation for recurring shifts without specific dates
+        if (!$employeeShift->shift_date) {
+            Log::info('Skipping payroll creation for recurring shift without date', [
+                'employee_shift_id' => $employeeShift->id,
+                'shift_id' => $shift->id,
+            ]);
+            return;
+        }
+
+        // Calculate shift duration in hours
+        $startTime = Carbon::createFromTimeString($shift->start_time->format('H:i:s'));
+        $endTime = Carbon::createFromTimeString($shift->end_time->format('H:i:s'));
+
+        // Handle shifts that cross midnight
+        if ($endTime->lt($startTime)) {
+            $endTime->addDay();
+        }
+
+        $totalMinutes = $endTime->diffInMinutes($startTime);
+        $totalHours = round($totalMinutes / 60, 2);
+        $totalPay = $totalHours * $employee->hourly_rate;
+
+        // Check if payroll record already exists for this shift
+        $existingPayroll = EmployeePayroll::where('employee_id', $employeeShift->employee_id)
+            ->where('employee_shift_id', $employeeShift->id)
+            ->where('shift_date', $employeeShift->shift_date)
+            ->first();
+
+        if ($existingPayroll) {
+            // Update existing payroll record
+            $existingPayroll->update([
+                'hourly_rate' => $employee->hourly_rate,
+                'total_hours' => $totalHours,
+                'total_pay' => $totalPay,
+                'accepted_at' => $employeeShift->responded_at ?? now(),
+            ]);
+        } else {
+            // Create new payroll record
+            EmployeePayroll::create([
+                'employee_id' => $employeeShift->employee_id,
+                'employee_shift_id' => $employeeShift->id,
+                'shift_date' => $employeeShift->shift_date,
+                'hourly_rate' => $employee->hourly_rate,
+                'total_hours' => $totalHours,
+                'total_pay' => $totalPay,
+                'status' => 'active',
+                'accepted_at' => $employeeShift->responded_at ?? now(),
             ]);
         }
     }
