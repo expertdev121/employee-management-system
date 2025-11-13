@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Request as FacadesRequest;
 
-class EmployeeController extends Controller
+class ClientController extends Controller
 {
     public function dashboard()
     {
@@ -60,7 +60,7 @@ class EmployeeController extends Controller
             ->take(3)
             ->get();
 
-        return view('employee.dashboard', compact(
+        return view('client.dashboard', compact(
             'todayShifts',
             'upcomingShifts',
             'pendingRequests',
@@ -78,14 +78,14 @@ class EmployeeController extends Controller
             ->with('shift')
             ->orderBy('shift_date', 'desc')
             ->paginate(15);
-        return view('employee.shifts.index', compact('shifts'));
+        return view('client.shifts.index', compact('shifts'));
     }
 
     public function attendance()
     {
         $user = Auth::user();
 
-        // Get all attendance logs for the employee, including those from unassigned shifts
+        // Get all attendance logs for the client, including those from unassigned shifts
         $attendanceLogs = AttendanceLog::where('employee_id', $user->id)
             ->with(['shift'])
             ->latest('attendance_date')
@@ -106,7 +106,7 @@ class EmployeeController extends Controller
             ->whereYear('attendance_date', now()->year)
             ->sum('total_hours');
 
-        return view('employee.attendance.index', compact('attendanceLogs', 'thisMonthHours'));
+        return view('client.attendance.index', compact('attendanceLogs', 'thisMonthHours'));
     }
 
     public function requests(Request $request)
@@ -124,7 +124,7 @@ class EmployeeController extends Controller
         $requests = $query->paginate(15)->appends($request->query());
         $currentStatus = $request->get('status', 'all');
 
-        return view('employee.requests.index', compact('requests', 'currentStatus'));
+        return view('client.requests.index', compact('requests', 'currentStatus'));
     }
 
     public function profile()
@@ -138,7 +138,7 @@ class EmployeeController extends Controller
         $totalHours = AttendanceLog::where('employee_id', $user->id)
             ->sum('total_hours');
 
-        return view('employee.profile.index', compact('user', 'totalShifts', 'totalHours'));
+        return view('client.profile.index', compact('user', 'totalShifts', 'totalHours'));
     }
 
     public function acceptShift(Request $request, EmployeeShift $employeeShift)
@@ -175,16 +175,18 @@ class EmployeeController extends Controller
                     return response()->json(['error' => 'Shift is at full capacity (' . $lockedShift->shift->max_capacity . ' employees max). Cannot accept this shift.'], 400);
                 }
 
-                // Check daily limit for employees: max 4 shifts per day
+                // Check weekly limit for clients: max 4 shifts per week
                 $shiftDate = $lockedShift->shift_date ?? now()->toDateString();
+                $weekStart = Carbon::parse($shiftDate)->startOfWeek();
+                $weekEnd = Carbon::parse($shiftDate)->endOfWeek();
 
-                $dailyShifts = EmployeeShift::where('employee_id', $employeeId)
+                $weeklyShifts = EmployeeShift::where('employee_id', $employeeId)
                     ->where('status', 'accepted')
-                    ->where('shift_date', $shiftDate)
+                    ->whereBetween('shift_date', [$weekStart, $weekEnd])
                     ->count();
 
-                if ($dailyShifts >= 4) {
-                    return response()->json(['error' => 'You have reached the maximum of 4 shifts per day. Cannot accept this shift.'], 400);
+                if ($weeklyShifts >= 4) {
+                    return response()->json(['error' => 'You have reached the maximum of 4 shifts per week. Cannot accept this shift.'], 400);
                 }
 
                 // Update shift status
@@ -233,7 +235,7 @@ class EmployeeController extends Controller
         } catch (\Illuminate\Database\QueryException $e) {
             // Handle database-specific errors
             Log::error('Database error during shift acceptance', [
-                'employee_shift_id' => $employeeShiftId ?? null,
+                'employee_shift_id' => $employeeShiftId,
                 'error' => $e->getMessage(),
                 'code' => $e->getCode()
             ]);
@@ -246,7 +248,7 @@ class EmployeeController extends Controller
         } catch (\Exception $e) {
             // Handle any other exceptions
             Log::error('Unexpected error during shift acceptance', [
-                'employee_shift_id' => $employeeShiftId ?? null,
+                'employee_shift_id' => $employeeShiftId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -278,8 +280,6 @@ class EmployeeController extends Controller
         return response()->json(['success' => 'Shift rejected successfully']);
     }
 
-
-
     public function showShift(EmployeeShift $employeeShift)
     {
         if ($employeeShift->employee_id !== Auth::id()) {
@@ -288,7 +288,7 @@ class EmployeeController extends Controller
 
         $employeeShift->load(['shift', 'employee']);
 
-        return view('employee.shifts.show', compact('employeeShift'));
+        return view('client.shifts.show', compact('employeeShift'));
     }
 
     public function payroll(Request $request)
@@ -346,7 +346,7 @@ class EmployeeController extends Controller
         $currentMonthHours = $currentMonthPayroll->sum('total_hours');
         $currentMonthPay = $currentMonthPayroll->sum('total_pay');
 
-        return view('employee.payroll.index', compact(
+        return view('client.payroll.index', compact(
             'previousMonthHours',
             'previousMonthPay',
             'currentMonthHours',

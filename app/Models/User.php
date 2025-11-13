@@ -118,6 +118,11 @@ class User extends Authenticatable
         return $this->role === 'employee';
     }
 
+    public function isClient()
+    {
+        return $this->role === 'client';
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
@@ -133,6 +138,11 @@ class User extends Authenticatable
         return $query->where('role', 'employee');
     }
 
+    public function scopeClients($query)
+    {
+        return $query->where('role', 'client');
+    }
+
     public function scopePaginateEmployees($query, $perPage = 15)
     {
         return $query->employees()->active()->paginate($perPage);
@@ -141,5 +151,10 @@ class User extends Authenticatable
     public function scopePaginateAdmins($query, $perPage = 15)
     {
         return $query->admins()->paginate($perPage);
+    }
+
+    public function scopePaginateClients($query, $perPage = 15)
+    {
+        return $query->clients()->active()->paginate($perPage);
     }
 }
