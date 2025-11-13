@@ -422,7 +422,11 @@
                                     <div class="employee-card-item">
                                         <span class="employee-card-label">Status:</span>
                                         <span class="employee-card-value">
-                                            <span class="badge-custom badge-{{ $assignment->status === 'assigned' ? 'success' : ($assignment->status === 'pending' ? 'warning' : 'danger') }}">
+                                            <span class="badge-custom badge-{{
+                                                $assignment->status === 'assigned' || $assignment->status === 'accepted' ? 'success' :
+                                                ($assignment->status === 'pending' ? 'warning' :
+                                                ($assignment->status === 'rejected' ? 'danger' : 'secondary'))
+                                            }}">
                                                 {{ ucfirst($assignment->status) }}
                                             </span>
                                         </span>
@@ -440,6 +444,22 @@
                                         <div class="employee-card-item">
                                             <span class="employee-card-label">Assignment Type:</span>
                                             <span class="employee-card-value">Recurring Shift</span>
+                                        </div>
+                                    @endif
+                                    @if(in_array($assignment->status, ['assigned', 'accepted']))
+                                        <div class="employee-card-item">
+                                            <span class="employee-card-label">Actions:</span>
+                                            <span class="employee-card-value">
+                                                <button type="button" class="btn-custom btn-warning-custom"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#unassignEmployeeModal"
+                                                        data-assignment-id="{{ $assignment->id }}"
+                                                        data-employee-name="{{ $assignment->employee->name }}"
+                                                        data-shift-name="{{ $shift->shift_name }}">
+                                                    <i class="fas fa-user-times"></i>
+                                                    <span>Unassign</span>
+                                                </button>
+                                            </span>
                                         </div>
                                     @endif
                                 </div>
@@ -551,4 +571,48 @@
         </div>
     </div>
 </div>
+
+<!-- Unassign Employee Modal -->
+<div class="modal fade" id="unassignEmployeeModal" tabindex="-1" aria-labelledby="unassignEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="unassignEmployeeModalLabel">Unassign Employee from Shift</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="unassignForm" action="" method="POST">
+                @csrf
+                @method('POST')
+                <div class="modal-body">
+                    <p>Are you sure you want to unassign <strong id="employeeName"></strong> from the shift "<strong id="shiftName"></strong>"?</p>
+                    <p class="text-muted">This action cannot be undone. The employee will no longer be assigned to this shift.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Unassign Employee</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const unassignModal = document.getElementById('unassignEmployeeModal');
+    const unassignForm = document.getElementById('unassignForm');
+    const employeeNameSpan = document.getElementById('employeeName');
+    const shiftNameSpan = document.getElementById('shiftName');
+
+    unassignModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const assignmentId = button.getAttribute('data-assignment-id');
+        const employeeName = button.getAttribute('data-employee-name');
+        const shiftName = button.getAttribute('data-shift-name');
+
+        employeeNameSpan.textContent = employeeName;
+        shiftNameSpan.textContent = shiftName;
+        unassignForm.action = `/admin/shifts/${assignmentId}/unassign`;
+    });
+});
+</script>
 @endsection

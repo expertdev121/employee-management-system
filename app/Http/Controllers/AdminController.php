@@ -334,6 +334,20 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Employee assigned to shift successfully.');
     }
 
+    public function unassignEmployeeFromShift(EmployeeShift $employeeShift)
+    {
+        if (!in_array($employeeShift->status, ['assigned', 'accepted'])) {
+            return redirect()->back()->with('error', 'Only assigned or accepted shifts can be unassigned.');
+        }
+
+        $employeeShift->update([
+            'status' => 'unassigned',
+            'responded_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Employee unassigned from shift successfully.');
+    }
+
     // Attendance CRUD
     public function attendance()
     {
