@@ -58,6 +58,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/employees/{employee}', [AdminController::class, 'updateEmployee'])->name('admin.employees.update');
     Route::delete('/admin/employees/{employee}', [AdminController::class, 'destroyEmployee'])->name('admin.employees.destroy');
 
+    // Clients CRUD
+    Route::get('/admin/clients', [AdminController::class, 'clients'])->name('admin.clients.index');
+    Route::get('/admin/clients/create', [AdminController::class, 'createClient'])->name('admin.clients.create');
+    Route::post('/admin/clients', [AdminController::class, 'storeClient'])->name('admin.clients.store');
+    Route::get('/admin/clients/{client}', [AdminController::class, 'showClient'])->name('admin.clients.show');
+    Route::get('/admin/clients/{client}/edit', [AdminController::class, 'editClient'])->name('admin.clients.edit');
+    Route::put('/admin/clients/{client}', [AdminController::class, 'updateClient'])->name('admin.clients.update');
+    Route::delete('/admin/clients/{client}', [AdminController::class, 'destroyClient'])->name('admin.clients.destroy');
+
     // Shifts CRUD
     Route::get('/admin/shifts', [AdminController::class, 'shifts'])->name('admin.shifts.index');
     Route::get('/admin/shifts/create', [AdminController::class, 'createShift'])->name('admin.shifts.create');

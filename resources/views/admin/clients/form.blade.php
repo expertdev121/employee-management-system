@@ -88,6 +88,7 @@
 }
 
 
+/* Form Label */
 .form-label {
     display: block;
     margin-bottom: 8px;
@@ -348,19 +349,19 @@
     <div class="form-header">
         <h1 class="form-title">
             <i class="fas fa-user-plus" style="color: #10b981;"></i>
-            {{ isset($employee) ? 'Edit User' : 'Add New User' }}
+            {{ isset($client) ? 'Edit Client' : 'Add New Client' }}
         </h1>
-        <a href="{{ route('admin.employees.index') }}" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Users
+        <a href="{{ route('admin.clients.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Clients
         </a>
     </div>
 
 
     <div class="form-card">
-        <form action="{{ isset($employee) ? route('admin.employees.update', $employee) : route('admin.employees.store') }}"
+        <form action="{{ isset($client) ? route('admin.clients.update', $client) : route('admin.clients.store') }}"
               method="POST">
             @csrf
-            @if(isset($employee))
+            @if(isset($client))
                 @method('PUT')
             @endif
 
@@ -374,7 +375,7 @@
                     <input type="text"
                            id="name"
                            name="name"
-                           value="{{ old('name', $employee->name ?? '') }}"
+                           value="{{ old('name', $client->name ?? '') }}"
                            class="form-input @error('name') is-invalid @enderror"
                            placeholder="Enter full name"
                            required>
@@ -392,7 +393,7 @@
                     <input type="email"
                            id="email"
                            name="email"
-                           value="{{ old('email', $employee->email ?? '') }}"
+                           value="{{ old('email', $client->email ?? '') }}"
                            class="form-input @error('email') is-invalid @enderror"
                            placeholder="Enter email address"
                            required>
@@ -403,7 +404,7 @@
             </div>
 
 
-            @if(!isset($employee))
+            @if(!isset($client))
             <div class="form-row">
                 <!-- Password -->
                 <div class="form-group">
@@ -445,7 +446,7 @@
                     <input type="tel"
                            id="phone"
                            name="phone"
-                           value="{{ old('phone', $employee->phone ?? '') }}"
+                           value="{{ old('phone', $client->phone ?? '') }}"
                            class="form-input @error('phone') is-invalid @enderror"
                            placeholder="Enter phone number">
                     @error('phone')
@@ -460,7 +461,7 @@
                     <input type="text"
                            id="department"
                            name="department"
-                           value="{{ old('department', $employee->department ?? '') }}"
+                           value="{{ old('department', $client->department ?? '') }}"
                            class="form-input @error('department') is-invalid @enderror"
                            placeholder="Enter department">
                     @error('department')
@@ -481,7 +482,7 @@
                         <input type="number"
                                id="hourly_rate"
                                name="hourly_rate"
-                               value="{{ old('hourly_rate', $employee->hourly_rate ?? '15.00') }}"
+                               value="{{ old('hourly_rate', $client->hourly_rate ?? '15.00') }}"
                                class="form-input input-with-currency @error('hourly_rate') is-invalid @enderror"
                                step="0.01"
                                min="0"
@@ -494,25 +495,7 @@
                 </div>
 
 
-                <!-- Role -->
-                <div class="form-group">
-                    <label for="role" class="form-label">
-                        Role <span class="required">*</span>
-                    </label>
-                    <select id="role"
-                            name="role"
-                            class="form-select @error('role') is-invalid @enderror"
-                            required>
-                        <option value="" disabled selected>Select Role</option>
-                        <option value="employee" {{ old('role', $employee->role ?? 'employee') == 'employee' ? 'selected' : '' }}>Employee</option>
-                        <option value="client" {{ old('role', $employee->role ?? 'employee') == 'client' ? 'selected' : '' }}>Client</option>
-                    </select>
-                    @error('role')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                @if(isset($employee))
+                @if(isset($client))
                 <!-- Status -->
                 <div class="form-group">
                     <label for="status" class="form-label">
@@ -523,9 +506,9 @@
                             class="form-select @error('status') is-invalid @enderror"
                             required>
                         <option value="" disabled selected>Select Status</option>
-                        <option value="active" {{ old('status', $employee->status ?? 'active') == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ old('status', $employee->status ?? 'active') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        {{-- <option value="blocked" {{ old('status', $employee->status ?? 'active') == 'blocked' ? 'selected' : '' }}>Blocked</option> --}}
+                        <option value="active" {{ old('status', $client->status ?? 'active') == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ old('status', $client->status ?? 'active') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        {{-- <option value="blocked" {{ old('status', $client->status ?? 'active') == 'blocked' ? 'selected' : '' }}>Blocked</option> --}}
                     </select>
                     @error('status')
                         <div class="error-message">{{ $message }}</div>
@@ -537,12 +520,12 @@
 
             <!-- Form Actions -->
             <div class="form-actions">
-                <a href="{{ route('admin.employees.index') }}" class="btn btn-secondary">
+                <a href="{{ route('admin.clients.index') }}" class="btn btn-secondary">
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i>
-                    {{ isset($employee) ? 'Update User' : 'Create User' }}
+                    {{ isset($client) ? 'Update Client' : 'Create Client' }}
                 </button>
             </div>
         </form>
