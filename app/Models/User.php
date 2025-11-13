@@ -28,6 +28,8 @@ class User extends Authenticatable
         'status',
         'department',
         'hourly_rate',
+        'max_shifts_per_week',
+        'max_shifts_per_day',
     ];
 
     /**
@@ -95,6 +97,15 @@ class User extends Authenticatable
     {
         parent::boot();
 
+        static::creating(function ($user) {
+            // Set default shift limits based on role
+            if ($user->role === 'employee') {
+                $user->max_shifts_per_day = $user->max_shifts_per_day ?? 4;
+            } elseif ($user->role === 'client') {
+                $user->max_shifts_per_week = $user->max_shifts_per_week ?? 4;
+            }
+        });
+
         static::deleting(function ($user) {
             // Delete related records when user is permanently deleted
             $user->employeeShifts()->delete();
@@ -118,6 +129,11 @@ class User extends Authenticatable
         return $this->role === 'employee';
     }
 
+    public function isClient()
+    {
+        return $this->role === 'client';
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
@@ -133,6 +149,11 @@ class User extends Authenticatable
         return $query->where('role', 'employee');
     }
 
+    public function scopeClients($query)
+    {
+        return $query->where('role', 'client');
+    }
+
     public function scopePaginateEmployees($query, $perPage = 15)
     {
         return $query->employees()->active()->paginate($perPage);
@@ -141,5 +162,10 @@ class User extends Authenticatable
     public function scopePaginateAdmins($query, $perPage = 15)
     {
         return $query->admins()->paginate($perPage);
+    }
+
+    public function scopePaginateClients($query, $perPage = 15)
+    {
+        return $query->clients()->active()->paginate($perPage);
     }
 }

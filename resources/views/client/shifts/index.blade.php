@@ -359,7 +359,7 @@
             <i class="fas fa-clock"></i>
             <h2>My Shifts</h2>
         </div>
-        <a href="{{ route('employee.dashboard') }}" class="btn-back">
+        <a href="{{ route('client.dashboard') }}" class="btn-back">
             <i class="fas fa-arrow-left"></i>
             <span>Back to Dashboard</span>
         </a>
@@ -460,7 +460,7 @@
                                 @endif
                             </div>
                             @else
-                            <a href="{{ route('employee.shifts.show', $shift) }}" class="btn-action btn-action-primary">
+                            <a href="{{ route('client.shifts.show', $shift) }}" class="btn-action btn-action-primary">
                                 <i class="fas fa-eye"></i>
                                 <span>Details</span>
                             </a>
@@ -572,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Accepting...';
         });
 
-        fetch(`/employee/shifts/${shiftId}/accept`, {
+        fetch(`/client/shifts/${shiftId}/accept`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -607,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function rejectShift(shiftId, reason) {
-        fetch(`/employee/shifts/${shiftId}/reject`, {
+        fetch(`/client/shifts/${shiftId}/reject`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -644,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
 
-        fetch('/employee/attendance/clock-in', {
+        fetch('/client/attendance/clock-in', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -113,13 +113,13 @@
         border-bottom: none;
     }
 
-    .employee-info {
+    .client-info {
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
 
-    .employee-avatar {
+    .client-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
@@ -132,18 +132,18 @@
         font-size: 1rem;
     }
 
-    .employee-details {
+    .client-details {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
     }
 
-    .employee-name {
+    .client-name {
         font-weight: 600;
         color: #1f2937;
     }
 
-    .employee-role {
+    .client-role {
         font-size: 0.875rem;
         color: #6b7280;
     }
@@ -294,11 +294,11 @@
     <div class="page-header-content">
         <div class="page-title">
             <i class="fas fa-users"></i>
-            <h2>Users Management</h2>
+            <h2>Clients Management</h2>
         </div>
-        <a href="{{ route('admin.employees.create') }}" class="btn-add">
+        <a href="{{ route('admin.clients.create') }}" class="btn-add">
             <i class="fas fa-plus"></i>
-            <span>Add User</span>
+            <span>Add Client</span>
         </a>
     </div>
 </div>
@@ -309,63 +309,56 @@
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>User</th>
+                        <th>Client</th>
                         <th>Contact</th>
                         <th>Department</th>
-                        <th>Role</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($employees as $employee)
+                    @forelse($clients as $client)
                     <tr>
                         <td>
-                            <div class="employee-info">
-                                <div class="employee-avatar">
-                                    {{ strtoupper(substr($employee->name, 0, 1)) }}
+                            <div class="client-info">
+                                <div class="client-avatar">
+                                    {{ strtoupper(substr($client->name, 0, 1)) }}
                                 </div>
-                                <div class="employee-details">
-                                    <span class="employee-name">{{ $employee->name }}</span>
-                                    <span class="employee-role">User ID: #{{ $employee->id }}</span>
+                                <div class="client-details">
+                                    <span class="client-name">{{ $client->name }}</span>
+                                    <span class="client-role">Client ID: #{{ $client->id }}</span>
                                 </div>
                             </div>
                         </td>
                         <td>
                             <div class="contact-info">
-                                <span class="contact-primary">{{ $employee->email }}</span>
+                                <span class="contact-primary">{{ $client->email }}</span>
                                 <span class="contact-secondary">
                                     <i class="fas fa-phone" style="font-size: 0.75rem; margin-right: 0.25rem;"></i>
-                                    {{ $employee->phone ?? 'N/A' }}
+                                    {{ $client->phone ?? 'N/A' }}
                                 </span>
                             </div>
                         </td>
                         <td>
                             <span style="font-weight: 500; color: #374151;">
-                                {{ $employee->department ?? 'Not Assigned' }}
+                                {{ $client->department ?? 'Not Assigned' }}
                             </span>
                         </td>
                         <td>
-                            <span class="badge-custom badge-primary">
-                                <i class="fas fa-user" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
-                                {{ ucfirst($employee->role) }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge-custom badge-{{ $employee->status === 'active' ? 'active' : 'inactive' }}">
-                                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.5rem;"></i>
-                                {{ ucfirst($employee->status) }}
+                            <span class="badge-custom badge-{{ $client->status === 'active' ? 'active' : 'inactive' }}">
+                                <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.375rem;"></i>
+                                {{ ucfirst($client->status) }}
                             </span>
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <a href="{{ route('admin.employees.show', $employee) }}" class="btn-action btn-action-view" title="View">
+                                <a href="{{ route('admin.clients.show', $client) }}" class="btn-action btn-action-view" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.employees.edit', $employee) }}" class="btn-action btn-action-edit" title="Edit">
+                                <a href="{{ route('admin.clients.edit', $client) }}" class="btn-action btn-action-edit" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <button type="button" class="btn-action btn-action-delete" onclick="deleteEmployee({{ $employee->id }}, '{{ $employee->name }}')" title="Delete">
+                                <button type="button" class="btn-action btn-action-delete" onclick="deleteClient({{ $client->id }}, '{{ $client->name }}')" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -373,11 +366,11 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="5">
                             <div class="empty-state">
                                 <div class="empty-state-icon">👥</div>
-                                <div class="empty-state-text">No users found</div>
-                                <div class="empty-state-subtext">Start by adding your first user</div>
+                                <div class="empty-state-text">No clients found</div>
+                                <div class="empty-state-subtext">Start by adding your first client</div>
                             </div>
                         </td>
                     </tr>
@@ -386,9 +379,9 @@
             </table>
         </div>
 
-        @if($employees->hasPages())
+        @if($clients->hasPages())
         <div class="pagination-wrapper">
-            {{ $employees->links() }}
+            {{ $clients->links() }}
         </div>
         @endif
     </div>

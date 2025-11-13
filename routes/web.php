@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ClientController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -24,6 +25,8 @@ Route::get('/', function () {
             return redirect()->route('admin.dashboard');
         } elseif ($user->role === 'employee') {
             return redirect()->route('employee.dashboard');
+        } elseif ($user->role === 'client') {
+            return redirect()->route('client.dashboard');
         }
     }
     return redirect('/login');
@@ -35,6 +38,8 @@ Route::get('/home', function () {
             return redirect()->route('admin.dashboard');
         } elseif ($user->role === 'employee') {
             return redirect()->route('employee.dashboard');
+        } elseif ($user->role === 'client') {
+            return redirect()->route('client.dashboard');
         }
     }
     return redirect('/login');
@@ -53,6 +58,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/employees/{employee}', [AdminController::class, 'updateEmployee'])->name('admin.employees.update');
     Route::delete('/admin/employees/{employee}', [AdminController::class, 'destroyEmployee'])->name('admin.employees.destroy');
 
+    // Clients CRUD
+    Route::get('/admin/clients', [AdminController::class, 'clients'])->name('admin.clients.index');
+    Route::get('/admin/clients/create', [AdminController::class, 'createClient'])->name('admin.clients.create');
+    Route::post('/admin/clients', [AdminController::class, 'storeClient'])->name('admin.clients.store');
+    Route::get('/admin/clients/{client}', [AdminController::class, 'showClient'])->name('admin.clients.show');
+    Route::get('/admin/clients/{client}/edit', [AdminController::class, 'editClient'])->name('admin.clients.edit');
+    Route::put('/admin/clients/{client}', [AdminController::class, 'updateClient'])->name('admin.clients.update');
+    Route::delete('/admin/clients/{client}', [AdminController::class, 'destroyClient'])->name('admin.clients.destroy');
+
     // Shifts CRUD
     Route::get('/admin/shifts', [AdminController::class, 'shifts'])->name('admin.shifts.index');
     Route::get('/admin/shifts/create', [AdminController::class, 'createShift'])->name('admin.shifts.create');
@@ -62,6 +76,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/shifts/{shift}', [AdminController::class, 'updateShift'])->name('admin.shifts.update');
     Route::delete('/admin/shifts/{shift}', [AdminController::class, 'destroyShift'])->name('admin.shifts.destroy');
     Route::post('/admin/shifts/{shift}/assign', [AdminController::class, 'assignEmployeeToShift'])->name('admin.shifts.assign');
+    Route::post('/admin/shifts/{employeeShift}/unassign', [AdminController::class, 'unassignEmployeeFromShift'])->name('admin.shifts.unassign');
 
     // Attendance CRUD
     Route::get('/admin/attendance', [AdminController::class, 'attendance'])->name('admin.attendance.index');
@@ -103,4 +118,17 @@ Route::middleware(['auth', 'role:employee'])->group(function () {
     Route::get('/employee/payroll', [EmployeeController::class, 'payroll'])->name('employee.payroll.index');
     Route::get('/employee/requests', [EmployeeController::class, 'requests'])->name('employee.requests.index');
     Route::get('/employee/profile', [EmployeeController::class, 'profile'])->name('employee.profile.edit');
+});
+
+// Client Routes
+Route::middleware(['auth', 'role:client'])->group(function () {
+    Route::get('/client/dashboard', [ClientController::class, 'dashboard'])->name('client.dashboard');
+    Route::get('/client/shifts', [ClientController::class, 'shifts'])->name('client.shifts.index');
+    Route::get('/client/shifts/{employeeShift}', [ClientController::class, 'showShift'])->name('client.shifts.show');
+    Route::post('/client/shifts/{employeeShift}/accept', [ClientController::class, 'acceptShift'])->name('client.shifts.accept');
+    Route::post('/client/shifts/{employeeShift}/reject', [ClientController::class, 'rejectShift'])->name('client.shifts.reject');
+    Route::get('/client/attendance', [ClientController::class, 'attendance'])->name('client.attendance.index');
+    Route::get('/client/payroll', [ClientController::class, 'payroll'])->name('client.payroll.index');
+    Route::get('/client/requests', [ClientController::class, 'requests'])->name('client.requests.index');
+    Route::get('/client/profile', [ClientController::class, 'profile'])->name('client.profile.edit');
 });

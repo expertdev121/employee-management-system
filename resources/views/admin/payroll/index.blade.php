@@ -261,7 +261,7 @@
     </style>
     <!-- Export Button -->
     <div style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
-        <a href="{{ route('admin.payroll.export') }}" class="btn btn-success"
+        <a href="{{ route('admin.payroll.export') }}?{{ http_build_query(request()->query()) }}" class="btn btn-success"
             style="background: #10b981; border-color: #10b981; color: white;">
             <i class="fas fa-file-export"></i> Export Payroll Data
         </a>
@@ -269,8 +269,8 @@
 
     <div class="page-header">
         <div>
-            <h1>Employee Payroll </h1>
-            <p>View employee payroll based on accepted shifts and hourly rates.</p>
+            <h1>Payroll Management</h1>
+            <p>View employee and client payroll based on accepted shifts and hourly rates.</p>
         </div>
     </div>
 
@@ -279,8 +279,8 @@
         style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
 
         <div style="position: relative; width: 320px;">
-            <input type="text" id="employeeSearch" name="employee_name" placeholder="🔍 Search employee name or email..."
-                value="{{ isset($employeeId) && $employeeId ? $employees->firstWhere('id', $employeeId)->name ?? '' : '' }}"
+            <input type="text" id="employeeSearch" name="employee_name" placeholder="🔍 Search employee or client name or email..."
+                value="{{ isset($employeeId) && $employeeId ? ($employees->firstWhere('id', $employeeId)->name ?? $clients->firstWhere('id', $employeeId)->name ?? '') : '' }}"
                 style="width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db; font-size: 0.9rem;"
                 onkeyup="filterEmployees(this.value)">
 
@@ -292,7 +292,16 @@
                         style="padding: 0.5rem 1rem; cursor: pointer; border-bottom: 1px solid #f3f4f6;"
                         onclick="selectEmployee({{ $employee->id }}, '{{ addslashes($employee->name) }}')">
                         {{ $employee->name }} <br>
-                        <span style="font-size: 0.8rem; color: #6b7280;">{{ $employee->email }}</span>
+                        <span style="font-size: 0.8rem; color: #6b7280;">{{ $employee->email }} (Employee)</span>
+                    </div>
+                @endforeach
+                @foreach ($clients as $client)
+                    <div class="employee-item" data-id="{{ $client->id }}" data-name="{{ strtolower($client->name) }}"
+                        data-email="{{ strtolower($client->email) }}"
+                        style="padding: 0.5rem 1rem; cursor: pointer; border-bottom: 1px solid #f3f4f6;"
+                        onclick="selectEmployee({{ $client->id }}, '{{ addslashes($client->name) }}')">
+                        {{ $client->name }} <br>
+                        <span style="font-size: 0.8rem; color: #6b7280;">{{ $client->email }} (Client)</span>
                     </div>
                 @endforeach
             </div>
@@ -306,28 +315,39 @@
                 Clear Filter
             </a>
         @endif
+
+        <!-- User Type Filter -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="font-size: 0.9rem; color: #374151; font-weight: 500;">Filter by:</label>
+            <select name="user_type" onchange="this.form.submit()" style="padding: 0.5rem 0.75rem; border-radius: 0.375rem; border: 1px solid #d1d5db; font-size: 0.9rem;">
+                <option value="">All Users</option>
+                <option value="employee" {{ request('user_type') === 'employee' ? 'selected' : '' }}>Employees Only</option>
+                <option value="client" {{ request('user_type') === 'client' ? 'selected' : '' }}>Clients Only</option>
+            </select>
+        </div>
     </form>
 
     <!-- Statistics Cards -->
     <div class="stats-grid">
         <div class="stat-card green">
-            <div class="stat-card-value">${{ number_format($totalProjectedPay, 2) }}</div>
+            <div class="stat-card-value">${{ number_format($totalProjectedPay + $totalClientProjectedPay, 2) }}</div>
             <div class="stat-card-label">Total Pay</div>
         </div>
         <div class="stat-card blue">
-            <div class="stat-card-value">{{ $employeesWithPay->count() }}</div>
-            <div class="stat-card-label">Employees with Shifts</div>
+            <div class="stat-card-value">{{ $employeesWithPay->count() + $clientsWithPay->count() }}</div>
+            <div class="stat-card-label">Users with Shifts</div>
         </div>
         <div class="stat-card orange">
-            <div class="stat-card-value">{{ $employeesWithPay->sum('shifts_count') }}</div>
+            <div class="stat-card-value">{{ $employeesWithPay->sum('shifts_count') + $clientsWithPay->sum('shifts_count') }}</div>
             <div class="stat-card-label">Total Accepted Shifts</div>
         </div>
         <div class="stat-card purple">
-            <div class="stat-card-value">{{ number_format($employeesWithPay->sum('calculated_hours'), 1) }}h</div>
+            <div class="stat-card-value">{{ number_format($employeesWithPay->sum('calculated_hours') + $clientsWithPay->sum('calculated_hours'), 1) }}h</div>
             <div class="stat-card-label">Total Hours</div>
         </div>
     </div>
 
+    @if (!$userType || $userType === 'employee')
     <!-- Employee Payroll -->
     <div class="dashboard-card">
         <div class="dashboard-card-header">
@@ -392,6 +412,74 @@
             @endif
         </div>
     </div>
+    @endif
+
+    @if (!$userType || $userType === 'client')
+    <!-- Client Payroll -->
+    <div class="dashboard-card">
+        <div class="dashboard-card-header">
+            <h5>Client Payroll</h5>
+            <div style="font-size: 0.875rem; color: #6b7280;">Based on accepted shifts and hourly rates</div>
+        </div>
+        <div class="dashboard-card-body" style="padding: 0;">
+            @if ($clientsWithPay->count() > 0)
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Shifts</th>
+                                <th>Total Hours</th>
+                                <th>Hourly Rate</th>
+                                <th>Total Pay</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($clientsWithPay as $client)
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div
+                                                style="width: 40px; height: 40px; border-radius: 50%; background: #fef3c7; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-weight: 600;">
+                                                {{ substr($client->name, 0, 1) }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 600;">{{ $client->name }}</div>
+                                                <div style="font-size: 0.875rem; color: #6b7280;">{{ $client->email }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600;">{{ $client->shifts_count }}</div>
+                                        <div style="font-size: 0.875rem; color: #6b7280;">accepted shifts</div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600;">{{ $client->calculated_hours }}h</div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600;">${{ number_format($client->hourly_rate, 2) }}/hr
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 700; color: #10b981;">
+                                            ${{ number_format($client->calculated_pay, 2) }}</div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="empty-state">
+                    <div class="empty-state-icon">👥</div>
+                    <div class="empty-state-text">No accepted shifts found</div>
+                    <div class="empty-state-subtext">Client payroll will appear here once shifts are accepted</div>
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
 
     <!-- Payroll Reports Table -->
     @if ($payrollReports->count() > 0)

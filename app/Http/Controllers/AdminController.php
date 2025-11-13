@@ -150,10 +150,10 @@ class AdminController extends Controller
         ]);
     }
 
-    // Employees CRUD
+    // Users CRUD (Employees and Clients)
     public function employees()
     {
-        $employees = User::employees()->with('employeeShifts.shift')->paginate(15);
+        $employees = User::whereIn('role', ['employee', 'client'])->with('employeeShifts.shift')->paginate(15);
         return view('admin.employees.index', compact('employees'));
     }
 
@@ -171,6 +171,7 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
+            'role' => 'required|in:employee,client',
         ]);
 
         User::create([
@@ -180,10 +181,12 @@ class AdminController extends Controller
             'phone' => $request->phone,
             'department' => $request->department,
             'hourly_rate' => $request->hourly_rate,
-            'role' => 'employee',
+            'role' => $request->role,
+            'max_shifts_per_week' => $request->role === 'client' ? 4 : null,
+            'max_shifts_per_day' => $request->role === 'employee' ? 4 : null,
         ]);
 
-        return redirect()->route('admin.employees.index')->with('success', 'Employee created successfully.');
+        return redirect()->route('admin.employees.index')->with('success', 'User created successfully.');
     }
 
     public function showEmployee(User $employee)
@@ -198,26 +201,96 @@ class AdminController extends Controller
 
     public function updateEmployee(Request $request, User $employee)
     {
-
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $employee->id,
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
+            'role' => 'required|in:employee,client',
             'status' => 'required|in:active,inactive,blocked',
         ]);
 
-        $employee->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'status']));
+        $employee->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'role', 'status']));
 
-        return redirect()->route('admin.employees.index')->with('success', 'Employee updated successfully.');
+        return redirect()->route('admin.employees.index')->with('success', 'User updated successfully.');
     }
 
     public function destroyEmployee(User $employee)
     {
         // Force delete to trigger cascade deletion of related records
         $employee->forceDelete();
-        return redirect()->route('admin.employees.index')->with('success', 'Employee deleted successfully.');
+        return redirect()->route('admin.employees.index')->with('success', 'User deleted successfully.');
+    }
+
+    // Clients CRUD
+    public function clients()
+    {
+        $clients = User::clients()->with('employeeShifts.shift')->paginate(15);
+        return view('admin.clients.index', compact('clients'));
+    }
+
+    public function createClient()
+    {
+        return view('admin.clients.form');
+    }
+
+    public function storeClient(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'department' => 'nullable|string|max:255',
+            'hourly_rate' => 'required|numeric|min:0',
+        ]);
+
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'department' => $request->department,
+            'hourly_rate' => $request->hourly_rate,
+            'role' => 'client',
+            'max_shifts_per_week' => 4,
+        ]);
+
+        return redirect()->route('admin.clients.index')->with('success', 'Client created successfully.');
+    }
+
+    public function showClient(User $client)
+    {
+        return view('admin.clients.show', compact('client'));
+    }
+
+    public function editClient(User $client)
+    {
+        return view('admin.clients.form', compact('client'));
+    }
+
+    public function updateClient(Request $request, User $client)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $client->id,
+            'phone' => 'nullable|string|max:20',
+            'department' => 'nullable|string|max:255',
+            'hourly_rate' => 'required|numeric|min:0',
+            'status' => 'required|in:active,inactive,blocked',
+        ]);
+
+        $client->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'status']));
+
+        return redirect()->route('admin.clients.index')->with('success', 'Client updated successfully.');
+    }
+
+    public function destroyClient(User $client)
+    {
+        // Force delete to trigger cascade deletion of related records
+        $client->forceDelete();
+        return redirect()->route('admin.clients.index')->with('success', 'Client deleted successfully.');
     }
 
     // Shifts CRUD
@@ -334,6 +407,20 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Employee assigned to shift successfully.');
     }
 
+    public function unassignEmployeeFromShift(EmployeeShift $employeeShift)
+    {
+        if (!in_array($employeeShift->status, ['assigned', 'accepted'])) {
+            return redirect()->back()->with('error', 'Only assigned or accepted shifts can be unassigned.');
+        }
+
+        $employeeShift->update([
+            'status' => 'unassigned',
+            'responded_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Employee unassigned from shift successfully.');
+    }
+
     // Attendance CRUD
     public function attendance()
     {
@@ -431,6 +518,7 @@ class AdminController extends Controller
     public function payroll(Request $request)
     {
         $employeeId = $request->get('employee_id');
+        $userType = $request->get('user_type');
 
         $payrollReports = PayrollReport::with(['employee', 'generator'])
             ->when($employeeId, fn($q) => $q->where('employee_id', $employeeId))
@@ -455,45 +543,91 @@ class AdminController extends Controller
             return 0;
         });
 
-        $employeesWithPay = User::employees()->active()
-            ->when($employeeId, fn($q) => $q->where('id', $employeeId))
-            ->with(['employeeShifts' => function ($query) {
-                $query->where('status', 'accepted')->with('shift');
-            }])
-            ->get()
-            ->map(function ($employee) {
-                $totalHours = 0;
-                $totalPay = 0;
+        $employeesWithPay = collect();
+        if (!$userType || $userType === 'employee') {
+            $employeesWithPay = User::employees()->active()
+                ->when($employeeId, fn($q) => $q->where('id', $employeeId))
+                ->with(['employeeShifts' => function ($query) {
+                    $query->where('status', 'accepted')->with('shift');
+                }])
+                ->get()
+                ->map(function ($employee) {
+                    $totalHours = 0;
+                    $totalPay = 0;
 
-                foreach ($employee->employeeShifts as $shiftAssignment) {
-                    if ($shiftAssignment->shift) {
-                        $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
-                        $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
-                        if ($endTime->lessThan($startTime)) {
-                            $endTime->addDay();
+                    foreach ($employee->employeeShifts as $shiftAssignment) {
+                        if ($shiftAssignment->shift) {
+                            $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
+                            $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
+                            if ($endTime->lessThan($startTime)) {
+                                $endTime->addDay();
+                            }
+                            $hours = $endTime->diffInHours($startTime);
+                            $totalHours += $hours;
+                            $totalPay += $hours * $employee->hourly_rate;
                         }
-                        $hours = $endTime->diffInHours($startTime);
-                        $totalHours += $hours;
-                        $totalPay += $hours * $employee->hourly_rate;
                     }
-                }
 
-                $employee->calculated_hours = $totalHours;
-                $employee->calculated_pay = $totalPay;
-                $employee->shifts_count = $employee->employeeShifts->count();
-                return $employee;
-            })
-            ->filter(fn($employee) => $employee->shifts_count > 0)
-            ->sortByDesc('calculated_pay');
+                    $employee->calculated_hours = $totalHours;
+                    $employee->calculated_pay = $totalPay;
+                    $employee->shifts_count = $employee->employeeShifts->count();
+                    return $employee;
+                })
+                ->filter(fn($employee) => $employee->shifts_count > 0)
+                ->sortByDesc('calculated_pay');
+        }
+
+        // Fetch clients with payroll data
+        $clientsWithPay = collect();
+        if (!$userType || $userType === 'client') {
+            $clientsWithPay = User::clients()->active()
+                ->when($employeeId, fn($q) => $q->where('id', $employeeId))
+                ->with(['employeeShifts' => function ($query) {
+                    $query->where('status', 'accepted')->with('shift');
+                }])
+                ->get()
+                ->map(function ($client) {
+                    $totalHours = 0;
+                    $totalPay = 0;
+
+                    foreach ($client->employeeShifts as $shiftAssignment) {
+                        if ($shiftAssignment->shift) {
+                            $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
+                            $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
+                            if ($endTime->lessThan($startTime)) {
+                                $endTime->addDay();
+                            }
+                            $hours = $endTime->diffInHours($startTime);
+                            $totalHours += $hours;
+                            $totalPay += $hours * $client->hourly_rate;
+                        }
+                    }
+
+                    $client->calculated_hours = $totalHours;
+                    $client->calculated_pay = $totalPay;
+                    $client->shifts_count = $client->employeeShifts->count();
+                    return $client;
+                })
+                ->filter(fn($client) => $client->shifts_count > 0)
+                ->sortByDesc('calculated_pay');
+        }
 
         $employees = User::employees()->active()->get();
+        $clients = User::clients()->active()->get();
+
+        // Calculate total client projected pay
+        $totalClientProjectedPay = $clientsWithPay->sum('calculated_pay');
 
         return view('admin.payroll.index', compact(
             'payrollReports',
             'totalProjectedPay',
             'employeesWithPay',
+            'clientsWithPay',
+            'totalClientProjectedPay',
             'employees',
-            'employeeId'
+            'clients',
+            'employeeId',
+            'userType'
         ));
     }
 
@@ -948,57 +1082,109 @@ class AdminController extends Controller
 
     public function exportPayroll(Request $request)
     {
-        $filename = 'employee_payroll_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        $employeeId = $request->get('employee_id');
+        $userType = $request->get('user_type');
 
-        return response()->streamDownload(function () {
+        $filename = 'payroll_' . now()->format('Y-m-d_H-i-s') . '.csv';
+
+        return response()->streamDownload(function () use ($employeeId, $userType) {
             $handle = fopen('php://output', 'w');
 
             // Write CSV Header
-            fputcsv($handle, ['Employee Name', 'Email', 'Shifts Count', 'Total Hours', 'Hourly Rate', 'Total Pay']);
+            fputcsv($handle, ['User Type', 'Name', 'Email', 'Shifts Count', 'Total Hours', 'Hourly Rate', 'Total Pay']);
 
-            // Get employees with accepted shifts and calculated pay
-            $employees = User::employees()->active()
-                ->with(['employeeShifts' => function ($query) {
-                    $query->where('status', 'accepted')->with('shift');
-                }])
-                ->get()
-                ->map(function ($employee) {
-                    $totalHours = 0;
-                    $totalPay = 0;
+            $users = collect();
 
-                    foreach ($employee->employeeShifts as $shiftAssignment) {
-                        if ($shiftAssignment->shift) {
-                            $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
-                            $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
-                            if ($endTime->lessThan($startTime)) {
-                                $endTime->addDay();
+            // Get employees if not filtering by client only
+            if (!$userType || $userType === 'employee') {
+                $employees = User::employees()->active()
+                    ->when($employeeId, fn($q) => $q->where('id', $employeeId))
+                    ->with(['employeeShifts' => function ($query) {
+                        $query->where('status', 'accepted')->with('shift');
+                    }])
+                    ->get()
+                    ->map(function ($employee) {
+                        $totalHours = 0;
+                        $totalPay = 0;
+
+                        foreach ($employee->employeeShifts as $shiftAssignment) {
+                            if ($shiftAssignment->shift) {
+                                $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
+                                $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
+                                if ($endTime->lessThan($startTime)) {
+                                    $endTime->addDay();
+                                }
+                                $hours = $endTime->diffInHours($startTime);
+                                $totalHours += $hours;
+                                $totalPay += $hours * $employee->hourly_rate;
                             }
-                            $hours = $endTime->diffInHours($startTime);
-                            $totalHours += $hours;
-                            $totalPay += $hours * $employee->hourly_rate;
                         }
-                    }
 
-                    return [
-                        'name' => $employee->name,
-                        'email' => $employee->email,
-                        'shifts_count' => $employee->employeeShifts->count(),
-                        'calculated_hours' => $totalHours,
-                        'hourly_rate' => $employee->hourly_rate,
-                        'calculated_pay' => $totalPay,
-                    ];
-                })
-                ->filter(fn($employee) => $employee['shifts_count'] > 0);
+                        return [
+                            'type' => 'Employee',
+                            'name' => $employee->name,
+                            'email' => $employee->email,
+                            'shifts_count' => $employee->employeeShifts->count(),
+                            'calculated_hours' => $totalHours,
+                            'hourly_rate' => $employee->hourly_rate,
+                            'calculated_pay' => $totalPay,
+                        ];
+                    })
+                    ->filter(fn($employee) => $employee['shifts_count'] > 0);
 
-            // Write employee rows
-            foreach ($employees as $emp) {
+                $users = $users->merge($employees);
+            }
+
+            // Get clients if not filtering by employee only
+            if (!$userType || $userType === 'client') {
+                $clients = User::clients()->active()
+                    ->when($employeeId, fn($q) => $q->where('id', $employeeId))
+                    ->with(['employeeShifts' => function ($query) {
+                        $query->where('status', 'accepted')->with('shift');
+                    }])
+                    ->get()
+                    ->map(function ($client) {
+                        $totalHours = 0;
+                        $totalPay = 0;
+
+                        foreach ($client->employeeShifts as $shiftAssignment) {
+                            if ($shiftAssignment->shift) {
+                                $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
+                                $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
+                                if ($endTime->lessThan($startTime)) {
+                                    $endTime->addDay();
+                                }
+                                $hours = $endTime->diffInHours($startTime);
+                                $totalHours += $hours;
+                                $totalPay += $hours * $client->hourly_rate;
+                            }
+                        }
+
+                        return [
+                            'type' => 'Client',
+                            'name' => $client->name,
+                            'email' => $client->email,
+                            'shifts_count' => $client->employeeShifts->count(),
+                            'calculated_hours' => $totalHours,
+                            'hourly_rate' => $client->hourly_rate,
+                            'calculated_pay' => $totalPay,
+                        ];
+                    })
+                    ->filter(fn($client) => $client['shifts_count'] > 0);
+
+                $users = $users->merge($clients);
+            }
+
+            // Write user rows
+            foreach ($users as $user) {
                 fputcsv($handle, [
-                    $emp['name'],
-                    $emp['email'],
-                    $emp['shifts_count'],
-                    $emp['calculated_hours'] . 'h',
-                    '$' . number_format($emp['hourly_rate'], 2),
-                    '$' . number_format($emp['calculated_pay'], 2),
+                    $user['type'],
+                    $user['name'],
+                    $user['email'],
+                    $user['shifts_count'],
+                    $user['calculated_hours'] . 'h',
+                    '$' . number_format($user['hourly_rate'], 2),
+                    '$' . number_format($user['calculated_pay'], 2),
                 ]);
             }
 

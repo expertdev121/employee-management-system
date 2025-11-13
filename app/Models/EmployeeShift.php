@@ -43,6 +43,11 @@ class EmployeeShift extends Model
         return $query->where('status', 'accepted');
     }
 
+    public function scopeUnassigned($query)
+    {
+        return $query->where('status', 'unassigned');
+    }
+
     public function scopeForDate($query, $date)
     {
         return $query->where('shift_date', $date);
