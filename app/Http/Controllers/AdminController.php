@@ -182,6 +182,8 @@ class AdminController extends Controller
             'department' => $request->department,
             'hourly_rate' => $request->hourly_rate,
             'role' => $request->role,
+            'max_shifts_per_week' => $request->role === 'client' ? 4 : null,
+            'max_shifts_per_day' => $request->role === 'employee' ? 4 : null,
         ]);
 
         return redirect()->route('admin.employees.index')->with('success', 'User created successfully.');
@@ -252,6 +254,7 @@ class AdminController extends Controller
             'department' => $request->department,
             'hourly_rate' => $request->hourly_rate,
             'role' => 'client',
+            'max_shifts_per_week' => 4,
         ]);
 
         return redirect()->route('admin.clients.index')->with('success', 'Client created successfully.');

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Request as FacadesRequest;
-
+    
 class EmployeeController extends Controller
 {
     public function dashboard()
@@ -175,7 +175,8 @@ class EmployeeController extends Controller
                     return response()->json(['error' => 'Shift is at full capacity (' . $lockedShift->shift->max_capacity . ' employees max). Cannot accept this shift.'], 400);
                 }
 
-                // Check daily limit for employees: max 4 shifts per day
+                // Check daily limit for employees
+                $maxDailyShifts = $lockedShift->employee->max_shifts_per_day ?? 4;
                 $shiftDate = $lockedShift->shift_date ?? now()->toDateString();
 
                 $dailyShifts = EmployeeShift::where('employee_id', $employeeId)
@@ -183,8 +184,8 @@ class EmployeeController extends Controller
                     ->where('shift_date', $shiftDate)
                     ->count();
 
-                if ($dailyShifts >= 4) {
-                    return response()->json(['error' => 'You have reached the maximum of 4 shifts per day. Cannot accept this shift.'], 400);
+                if ($dailyShifts >= $maxDailyShifts) {
+                    return response()->json(['error' => "You have reached the maximum of {$maxDailyShifts} shifts per day. Cannot accept this shift."], 400);
                 }
 
                 // Update shift status

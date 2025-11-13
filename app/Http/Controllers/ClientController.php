@@ -175,7 +175,8 @@ class ClientController extends Controller
                     return response()->json(['error' => 'Shift is at full capacity (' . $lockedShift->shift->max_capacity . ' employees max). Cannot accept this shift.'], 400);
                 }
 
-                // Check weekly limit for clients: max 4 shifts per week
+                // Check weekly limit for clients
+                $maxWeeklyShifts = $lockedShift->employee->max_shifts_per_week ?? 4;
                 $shiftDate = $lockedShift->shift_date ?? now()->toDateString();
                 $weekStart = Carbon::parse($shiftDate)->startOfWeek();
                 $weekEnd = Carbon::parse($shiftDate)->endOfWeek();
@@ -185,8 +186,8 @@ class ClientController extends Controller
                     ->whereBetween('shift_date', [$weekStart, $weekEnd])
                     ->count();
 
-                if ($weeklyShifts >= 4) {
-                    return response()->json(['error' => 'You have reached the maximum of 4 shifts per week. Cannot accept this shift.'], 400);
+                if ($weeklyShifts >= $maxWeeklyShifts) {
+                    return response()->json(['error' => "You have reached the maximum of {$maxWeeklyShifts} shifts per week. Cannot accept this shift."], 400);
                 }
 
                 // Update shift status
