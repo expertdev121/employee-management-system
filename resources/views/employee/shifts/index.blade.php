@@ -431,7 +431,7 @@
                             </span>
                         </td>
                         <td>
-                            @if(in_array($shift->status, ['pending', 'assigned']))
+                            @if(in_array($shift->status, ['pending', 'assigned']) && $shift->can_accept)
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <button class="btn-action btn-action-primary accept-shift" data-shift-id="{{ $shift->id }}">
                                     <i class="fas fa-check"></i>
@@ -441,6 +441,23 @@
                                     <i class="fas fa-times"></i>
                                     <span>Reject</span>
                                 </button>
+                            </div>
+                            @elseif($shift->status === 'accepted')
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <span class="badge-custom badge-success">Accepted</span>
+                                @if($shift->responded_at)
+                                <small style="color: #6b7280; font-size: 0.75rem;">
+                                    Response Date: {{ $shift->responded_at->format('M d, Y H:i') }}
+                                </small>
+                                @endif
+                                @if($shift->can_accept)
+                                <div style="margin-top: 0.5rem;">
+                                    <button class="btn-action btn-action-primary accept-shift" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                        <i class="fas fa-check"></i>
+                                        <span>Accept Today</span>
+                                    </button>
+                                </div>
+                                @endif
                             </div>
                             @else
                             <a href="{{ route('employee.shifts.show', $shift) }}" class="btn-action btn-action-primary">

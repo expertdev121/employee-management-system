@@ -78,6 +78,21 @@ class ClientController extends Controller
             ->with('shift')
             ->orderBy('shift_date', 'desc')
             ->paginate(15);
+
+        // Add can_accept flag to each shift
+        $currentDate = now()->toDateString();
+        foreach ($shifts as $shift) {
+            $shift->can_accept = false;
+
+            if (is_null($shift->shift_date)) {
+                // Recurring shift: check if already accepted today
+                $shift->can_accept = !($shift->responded_at && $shift->responded_at->toDateString() === $currentDate);
+            } else {
+                // Dated shift: check their own status
+                $shift->can_accept = in_array($shift->status, ['pending', 'assigned']);
+            }
+        }
+
         return view('client.shifts.index', compact('shifts'));
     }
 
@@ -150,36 +165,44 @@ class ClientController extends Controller
         // capture IDs so they're always available in catch blocks
         $employeeShiftId = $employeeShift->id;
         $employeeId = $employeeShift->employee_id;
+        $shiftId = $employeeShift->shift_id;
+        $currentDate = now()->toDateString();
 
         try {
-            return DB::transaction(function () use ($employeeShiftId, $employeeId) {
-                // Lock the record for update to prevent race conditions
-                $lockedShift = EmployeeShift::lockForUpdate()->find($employeeShiftId);
+            return DB::transaction(function () use ($employeeShiftId, $employeeId, $shiftId, $currentDate, $employeeShift) {
+                // Check if shift has already been accepted today
+                if ($employeeShift->shift_date === null) {
+                    // Recurring shift: check if already accepted today
+                    if ($employeeShift->responded_at && $employeeShift->responded_at->toDateString() === $currentDate) {
+                        return response()->json(['error' => 'You have already accepted this shift for today.'], 400);
+                    }
+                } else {
+                    // Dated shift: check for existing acceptance today
+                    $existingAcceptance = EmployeeShift::where('employee_id', $employeeId)
+                        ->where('shift_id', $shiftId)
+                        ->where('shift_date', $currentDate)
+                        ->where('status', 'accepted')
+                        ->first();
 
-                if (!$lockedShift) {
-                    return response()->json(['error' => 'Shift assignment not found'], 404);
+                    if ($existingAcceptance) {
+                        return response()->json(['error' => 'You have already accepted this shift for today.'], 400);
+                    }
                 }
 
-                if (!in_array($lockedShift->status, ['pending', 'assigned'])) {
-                    return response()->json(['error' => 'Shift is not available for acceptance. Current status: ' . $lockedShift->status], 400);
-                }
+                // Check if shift is at full capacity for today
+                $currentAssignments = EmployeeShift::where('shift_id', $shiftId)
+                    ->where('shift_date', $currentDate)
+                    ->where('status', 'accepted')
+                    ->count();
 
-                // Check if shift is at full capacity
-                $capacityQuery = EmployeeShift::where('shift_id', $lockedShift->shift_id)
-                    ->where('status', 'accepted');
-
-                // we intentionally do not depend on shift_date for capacity checks as requested
-                $currentAssignments = $capacityQuery->count();
-
-                if ($currentAssignments >= $lockedShift->shift->max_capacity) {
-                    return response()->json(['error' => 'Shift is at full capacity (' . $lockedShift->shift->max_capacity . ' employees max). Cannot accept this shift.'], 400);
+                if ($currentAssignments >= $employeeShift->shift->max_capacity) {
+                    return response()->json(['error' => 'Shift is at full capacity (' . $employeeShift->shift->max_capacity . ' employees max) for today. Cannot accept this shift.'], 400);
                 }
 
                 // Check weekly limit for clients
-                $maxWeeklyShifts = $lockedShift->employee->max_shifts_per_week ?? 4;
-                $shiftDate = $lockedShift->shift_date ?? now()->toDateString();
-                $weekStart = Carbon::parse($shiftDate)->startOfWeek();
-                $weekEnd = Carbon::parse($shiftDate)->endOfWeek();
+                $maxWeeklyShifts = $employeeShift->employee->max_shifts_per_week ?? 4;
+                $weekStart = Carbon::parse($currentDate)->startOfWeek();
+                $weekEnd = Carbon::parse($currentDate)->endOfWeek();
 
                 $weeklyShifts = EmployeeShift::where('employee_id', $employeeId)
                     ->where('status', 'accepted')
@@ -190,45 +213,85 @@ class ClientController extends Controller
                     return response()->json(['error' => "You have reached the maximum of {$maxWeeklyShifts} shifts per week. Cannot accept this shift."], 400);
                 }
 
-                // Update shift status
-                $lockedShift->update([
-                    'status' => 'accepted',
-                    'responded_at' => now(),
-                ]);
+                if ($employeeShift->shift_date === null) {
+                    // Recurring shift: update responded_at and create attendance/payroll for original shift
+                    $employeeShift->update(['responded_at' => now()]);
 
-                // Auto-add hours to attendance when shift is accepted
-                try {
-                    $this->addShiftHoursToAttendance($lockedShift);
-                } catch (\Exception $e) {
-                    // Log the attendance creation error
-                    Log::error('Failed to create attendance record for shift acceptance', [
-                        'employee_shift_id' => $employeeShiftId,
+                    // Auto-add hours to attendance when shift is accepted
+                    try {
+                        $this->addShiftHoursToAttendance($employeeShift);
+                    } catch (\Exception $e) {
+                        // Log the attendance creation error
+                        Log::error('Failed to create attendance record for shift acceptance', [
+                            'employee_shift_id' => $employeeShift->id,
+                            'employee_id' => $employeeId,
+                            'shift_id' => $shiftId,
+                            'error' => $e->getMessage()
+                        ]);
+
+                        // If attendance creation fails, rollback the transaction
+                        throw new \Exception('Failed to create attendance record: ' . $e->getMessage());
+                    }
+
+                    // Create employee payroll record
+                    try {
+                        $this->createEmployeePayrollRecord($employeeShift);
+                    } catch (\Exception $e) {
+                        // Log the payroll creation error
+                        Log::error('Failed to create payroll record for shift acceptance', [
+                            'employee_shift_id' => $employeeShift->id,
+                            'employee_id' => $employeeId,
+                            'shift_id' => $shiftId,
+                            'error' => $e->getMessage()
+                        ]);
+
+                        // If payroll creation fails, rollback the transaction
+                        throw new \Exception('Failed to create payroll record: ' . $e->getMessage());
+                    }
+                } else {
+                    // Dated shift: create new EmployeeShift record for today's acceptance
+                    $newEmployeeShift = EmployeeShift::create([
                         'employee_id' => $employeeId,
-                        'shift_id' => $lockedShift->shift_id,
-                        'error' => $e->getMessage()
+                        'shift_id' => $shiftId,
+                        'shift_date' => $currentDate,
+                        'status' => 'accepted',
+                        'responded_at' => now(),
                     ]);
 
-                    // If attendance creation fails, rollback the transaction
-                    throw new \Exception('Failed to create attendance record: ' . $e->getMessage());
-                }
+                    // Load relationships needed for attendance and payroll creation
+                    $newEmployeeShift->load(['employee', 'shift']);
 
-                // Load relationships needed for payroll creation
-                $lockedShift->load(['employee', 'shift']);
+                    // Auto-add hours to attendance when shift is accepted
+                    try {
+                        $this->addShiftHoursToAttendance($newEmployeeShift);
+                    } catch (\Exception $e) {
+                        // Log the attendance creation error
+                        Log::error('Failed to create attendance record for shift acceptance', [
+                            'employee_shift_id' => $newEmployeeShift->id,
+                            'employee_id' => $employeeId,
+                            'shift_id' => $shiftId,
+                            'error' => $e->getMessage()
+                        ]);
 
-                // Create employee payroll record
-                try {
-                    $this->createEmployeePayrollRecord($lockedShift);
-                } catch (\Exception $e) {
-                    // Log the payroll creation error
-                    Log::error('Failed to create payroll record for shift acceptance', [
-                        'employee_shift_id' => $employeeShiftId,
-                        'employee_id' => $employeeId,
-                        'shift_id' => $lockedShift->shift_id,
-                        'error' => $e->getMessage()
-                    ]);
+                        // If attendance creation fails, rollback the transaction
+                        throw new \Exception('Failed to create attendance record: ' . $e->getMessage());
+                    }
 
-                    // If payroll creation fails, rollback the transaction
-                    throw new \Exception('Failed to create payroll record: ' . $e->getMessage());
+                    // Create employee payroll record
+                    try {
+                        $this->createEmployeePayrollRecord($newEmployeeShift);
+                    } catch (\Exception $e) {
+                        // Log the payroll creation error
+                        Log::error('Failed to create payroll record for shift acceptance', [
+                            'employee_shift_id' => $newEmployeeShift->id,
+                            'employee_id' => $employeeId,
+                            'shift_id' => $shiftId,
+                            'error' => $e->getMessage()
+                        ]);
+
+                        // If payroll creation fails, rollback the transaction
+                        throw new \Exception('Failed to create payroll record: ' . $e->getMessage());
+                    }
                 }
 
                 return response()->json(['success' => 'Shift accepted successfully']);
