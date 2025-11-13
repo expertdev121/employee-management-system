@@ -74,6 +74,7 @@ class EmployeeController extends Controller
     {
         $user = Auth::user();
         $shifts = EmployeeShift::where('employee_id', $user->id)
+            ->where('status', '!=', 'unassigned')
             ->with('shift')
             ->orderBy('shift_date', 'desc')
             ->paginate(15);
@@ -84,18 +85,19 @@ class EmployeeController extends Controller
     {
         $user = Auth::user();
 
-        // Get accepted shifts with their attendance records
-        $acceptedShifts = EmployeeShift::where('employee_id', $user->id)
-            ->where('status', 'accepted')
+        // Get all attendance logs for the employee, including those from unassigned shifts
+        $attendanceLogs = AttendanceLog::where('employee_id', $user->id)
             ->with(['shift'])
-            ->latest('shift_date')
+            ->latest('attendance_date')
             ->paginate(15);
 
-        // Load attendance logs separately — always use current date for attendance lookup
-        $today = now()->toDateString();
-        foreach ($acceptedShifts as $shift) {
-            $shift->attendanceLog = AttendanceLog::where('employee_id', $shift->employee_id)
-                ->where('attendance_date', $today)
+        // Load the corresponding employee shift if it exists (even if unassigned)
+        foreach ($attendanceLogs as $attendance) {
+            $attendance->employeeShift = EmployeeShift::where('employee_id', $user->id)
+                ->where('shift_id', $attendance->shift_id)
+                ->when($attendance->shift_date, function ($query) use ($attendance) {
+                    return $query->where('shift_date', $attendance->attendance_date);
+                })
                 ->first();
         }
 
@@ -104,7 +106,7 @@ class EmployeeController extends Controller
             ->whereYear('attendance_date', now()->year)
             ->sum('total_hours');
 
-        return view('employee.attendance.index', compact('acceptedShifts', 'thisMonthHours'));
+        return view('employee.attendance.index', compact('attendanceLogs', 'thisMonthHours'));
     }
 
     public function requests(Request $request)

@@ -348,14 +348,14 @@
                         <span class="info-label">Start Time:</span>
                         <span class="info-value">
                             <i class="fas fa-clock" style="color: #10b981; margin-right: 0.375rem;"></i>
-                            {{ $shift->start_time }}
+                            {{ $shift->start_time->format('H:i') }}
                         </span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">End Time:</span>
                         <span class="info-value">
                             <i class="fas fa-clock" style="color: #ef4444; margin-right: 0.375rem;"></i>
-                            {{ $shift->end_time }}
+                            {{ $shift->end_time->format('H:i') }}
                         </span>
                     </div>
                     <div class="info-item">
@@ -407,8 +407,8 @@
                         <i class="fas fa-users"></i>
                         Assigned Employees
                     </h4>
-                    @if($shift->employeeShifts->count() > 0)
-                        @foreach($shift->employeeShifts as $assignment)
+                    @if($shift->employeeShifts->where('status', '!=', 'unassigned')->count() > 0)
+                        @foreach($shift->employeeShifts->where('status', '!=', 'unassigned') as $assignment)
                             @if($assignment->employee)
                                 <div class="employee-card">
                                     <div class="employee-card-item">

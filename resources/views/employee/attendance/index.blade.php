@@ -424,63 +424,54 @@
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Shift Date</th>
+                        <th>Attendance Date</th>
                         <th>Shift Name</th>
                         <th>Shift Time</th>
                         <th>Hours Worked</th>
                         <th>Status</th>
-                        <th>Accepted At</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($acceptedShifts as $shift)
+                    @forelse($attendanceLogs as $attendance)
                     <tr>
                         <td>
                             <div class="attendance-date">
-                                @if($shift->shift_date)
-                                    <span class="attendance-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                @else
-                                    <span class="attendance-date-main">Recurring</span>
-                                @endif
-                                @if($shift->shift_date)
-                                    <span class="attendance-date-day">{{ $shift->shift_date->format('l') }}</span>
-                                @else
-                                    <span class="attendance-date-day">Ongoing</span>
-                                @endif
+                                <span class="attendance-date-main">{{ $attendance->attendance_date->format('M d, Y') }}</span>
+                                <span class="attendance-date-day">{{ $attendance->attendance_date->format('l') }}</span>
                             </div>
                         </td>
                         <td>
                             <div style="font-weight: 500; color: #1f2937;">
-                                {{ $shift->shift->shift_name }}
+                                {{ $attendance->shift ? $attendance->shift->shift_name : 'N/A' }}
                             </div>
                         </td>
                         <td>
                             <div class="time-display">
                                 <i class="fas fa-clock"></i>
-                                <span>{{ $shift->shift->start_time->format('H:i') }} - {{ $shift->shift->end_time->format('H:i') }}</span>
+                                @if($attendance->shift)
+                                    <span>{{ $attendance->shift->start_time->format('H:i') }} - {{ $attendance->shift->end_time->format('H:i') }}</span>
+                                @else
+                                    <span>N/A</span>
+                                @endif
                             </div>
                         </td>
                         <td>
-                            <span class="hours-display">{{ $shift->attendanceLog ? number_format($shift->attendanceLog->total_hours, 2) : 'Pending' }}</span>
+                            <span class="hours-display">{{ number_format($attendance->total_hours, 2) }}</span>
                         </td>
                         <td>
-                            <span class="badge-custom badge-success">
-                                Accepted
+                            <span class="badge-custom badge-{{ $attendance->status === 'present' ? 'success' : ($attendance->status === 'absent' ? 'danger' : 'warning') }}">
+                                {{ ucfirst($attendance->status) }}
                             </span>
                         </td>
-                        <td>
-                            <div style="font-size: 0.875rem; color: #6b7280;">
-                                {{ $shift->responded_at ? $shift->responded_at->format('M d, H:i') : 'N/A' }}
-                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="5">
                             <div class="empty-state">
                                 <div class="empty-state-icon">📅</div>
-                                <div class="empty-state-text">No accepted shifts found</div>
-                                <div class="empty-state-subtext">Your accepted shifts and hours will appear here</div>
+                                <div class="empty-state-text">No attendance records found</div>
+                                <div class="empty-state-subtext">Your attendance records will appear here</div>
                             </div>
                         </td>
                     </tr>
@@ -489,9 +480,9 @@
             </table>
         </div>
 
-        @if($acceptedShifts->hasPages())
+        @if($attendanceLogs->hasPages())
         <div class="pagination-wrapper">
-            {{ $acceptedShifts->links() }}
+            {{ $attendanceLogs->links() }}
         </div>
         @endif
     </div>
