@@ -171,7 +171,7 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
-            'role' => 'required|in:employee,client',
+            // Removed role from validation because employees form no longer has role field
         ]);
 
         User::create([
@@ -181,12 +181,13 @@ class AdminController extends Controller
             'phone' => $request->phone,
             'department' => $request->department,
             'hourly_rate' => $request->hourly_rate,
-            'role' => $request->role,
-            'max_shifts_per_week' => $request->role === 'client' ? 4 : null,
-            'max_shifts_per_day' => $request->role === 'employee' ? 4 : null,
+            // Role fixed to 'employee' explicitly
+            'role' => 'employee',
+            'max_shifts_per_week' => null,
+            'max_shifts_per_day' => 4,
         ]);
 
-        return redirect()->route('admin.employees.index')->with('success', 'User created successfully.');
+        return redirect()->route('admin.employees.index')->with('success', 'Employee created successfully.');
     }
 
     public function showEmployee(User $employee)
@@ -207,13 +208,17 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
-            'role' => 'required|in:employee,client',
+            // Role removed from required validation because employees form does not submit it
             'status' => 'required|in:active,inactive,blocked',
         ]);
 
-        $employee->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'role', 'status']));
+        // Set role to employee explicitly to avoid missing role from form
+        $data = $request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'status']);
+        $data['role'] = 'employee';
 
-        return redirect()->route('admin.employees.index')->with('success', 'User updated successfully.');
+        $employee->update($data);
+
+        return redirect()->route('admin.employees.index')->with('success', 'Employee updated successfully.');
     }
 
     public function destroyEmployee(User $employee)

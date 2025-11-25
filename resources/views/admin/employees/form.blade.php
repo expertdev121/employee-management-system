@@ -348,10 +348,10 @@
     <div class="form-header">
         <h1 class="form-title">
             <i class="fas fa-user-plus" style="color: #10b981;"></i>
-            {{ isset($employee) ? 'Edit User' : 'Add New User' }}
+            {{ isset($employee) ? 'Edit Employee' : 'Add New Employee' }}
         </h1>
         <a href="{{ route('admin.employees.index') }}" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Users
+            <i class="fas fa-arrow-left"></i> Back to Employees
         </a>
     </div>
 
@@ -494,23 +494,8 @@
                 </div>
 
 
-                <!-- Role -->
-                <div class="form-group">
-                    <label for="role" class="form-label">
-                        Role <span class="required">*</span>
-                    </label>
-                    <select id="role"
-                            name="role"
-                            class="form-select @error('role') is-invalid @enderror"
-                            required>
-                        <option value="" disabled selected>Select Role</option>
-                        <option value="employee" {{ old('role', $employee->role ?? 'employee') == 'employee' ? 'selected' : '' }}>Employee</option>
-                        <option value="client" {{ old('role', $employee->role ?? 'employee') == 'client' ? 'selected' : '' }}>Client</option>
-                    </select>
-                    @error('role')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
+                {{-- Role field removed since employee role is fixed --}}
+
 
                 @if(isset($employee))
                 <!-- Status -->
@@ -542,7 +527,7 @@
                 </a>
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i>
-                    {{ isset($employee) ? 'Update User' : 'Create User' }}
+                    {{ isset($employee) ? 'Update Employee' : 'Create Employee' }}
                 </button>
             </div>
         </form>
