@@ -153,7 +153,7 @@ class AdminController extends Controller
     // Users CRUD (Employees and Clients)
     public function employees()
     {
-        $employees = User::whereIn('role', ['employee', 'client'])->with('employeeShifts.shift')->paginate(15);
+        $employees = User::where('role', 'employee')->with('employeeShifts.shift')->paginate(15);
         return view('admin.employees.index', compact('employees'));
     }
 

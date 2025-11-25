@@ -451,8 +451,14 @@
                             </li>
                             <li class="menu-item">
                                 <a class="menu-link {{ request()->routeIs('admin.employees*') ? 'active' : '' }}" href="{{ route('admin.employees.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-users"></i></span>
-                                    <span class="menu-text">Users</span>
+                                    <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
+                                    <span class="menu-text">Employees</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a class="menu-link {{ request()->routeIs('admin.clients*') ? 'active' : '' }}" href="{{ route('admin.clients.index') }}">
+                                    <span class="menu-icon"><i class="fas fa-user-friends"></i></span>
+                                    <span class="menu-text">Clients</span>
                                 </a>
                             </li>
                             <li class="menu-item">
