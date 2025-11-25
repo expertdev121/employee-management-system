@@ -153,7 +153,7 @@ class AdminController extends Controller
     // Users CRUD (Employees and Clients)
     public function employees()
     {
-        $employees = User::whereIn('role', ['employee', 'client'])->with('employeeShifts.shift')->paginate(15);
+        $employees = User::where('role', 'employee')->with('employeeShifts.shift')->paginate(15);
         return view('admin.employees.index', compact('employees'));
     }
 
@@ -171,7 +171,7 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
-            'role' => 'required|in:employee,client',
+            // Removed role from validation because employees form no longer has role field
         ]);
 
         User::create([
@@ -181,12 +181,13 @@ class AdminController extends Controller
             'phone' => $request->phone,
             'department' => $request->department,
             'hourly_rate' => $request->hourly_rate,
-            'role' => $request->role,
-            'max_shifts_per_week' => $request->role === 'client' ? 4 : null,
-            'max_shifts_per_day' => $request->role === 'employee' ? 4 : null,
+            // Role fixed to 'employee' explicitly
+            'role' => 'employee',
+            'max_shifts_per_week' => null,
+            'max_shifts_per_day' => 4,
         ]);
 
-        return redirect()->route('admin.employees.index')->with('success', 'User created successfully.');
+        return redirect()->route('admin.employees.index')->with('success', 'Employee created successfully.');
     }
 
     public function showEmployee(User $employee)
@@ -207,13 +208,17 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
-            'role' => 'required|in:employee,client',
+            // Role removed from required validation because employees form does not submit it
             'status' => 'required|in:active,inactive,blocked',
         ]);
 
-        $employee->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'role', 'status']));
+        // Set role to employee explicitly to avoid missing role from form
+        $data = $request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'status']);
+        $data['role'] = 'employee';
 
-        return redirect()->route('admin.employees.index')->with('success', 'User updated successfully.');
+        $employee->update($data);
+
+        return redirect()->route('admin.employees.index')->with('success', 'Employee updated successfully.');
     }
 
     public function destroyEmployee(User $employee)
@@ -515,119 +520,168 @@ class AdminController extends Controller
     }
 
     // Payroll CRUD
-    public function payroll(Request $request)
+public function payroll(Request $request)
     {
         $employeeId = $request->get('employee_id');
+        $employeeName = $request->get('employee_name');
         $userType = $request->get('user_type');
+        $month = $request->get('month');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
 
-        $payrollReports = PayrollReport::with(['employee', 'generator'])
-            ->when($employeeId, fn($q) => $q->where('employee_id', $employeeId))
-            ->paginate(15);
+        // Use EmployeePayroll model like EmployeeController for payroll data
 
-        // Calculate total projected pay for all time based on accepted shifts
-        $acceptedShifts = EmployeeShift::where('status', 'accepted')
-            ->when($employeeId, fn($q) => $q->where('employee_id', $employeeId))
-            ->with(['employee', 'shift'])
-            ->get();
+        $query = \App\Models\EmployeePayroll::with(['employee'])
+            ->when($employeeId, function ($q) use ($employeeId) {
+                $q->where('employee_id', $employeeId);
+            });
 
-        $totalProjectedPay = $acceptedShifts->sum(function ($shiftAssignment) {
-            if ($shiftAssignment->shift && $shiftAssignment->employee) {
-                $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
-                $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
-                if ($endTime->lessThan($startTime)) {
-                    $endTime->addDay();
-                }
-                $hours = $endTime->diffInHours($startTime);
-                return $hours * $shiftAssignment->employee->hourly_rate;
+        if ($month) {
+            try {
+                $parsedMonth = \Carbon\Carbon::createFromFormat('Y-m', $month);
+                $query->whereYear('shift_date', $parsedMonth->year)
+                    ->whereMonth('shift_date', $parsedMonth->month);
+            } catch (\Exception $e) {
+                // ignore
             }
-            return 0;
-        });
-
-        $employeesWithPay = collect();
-        if (!$userType || $userType === 'employee') {
-            $employeesWithPay = User::employees()->active()
-                ->when($employeeId, fn($q) => $q->where('id', $employeeId))
-                ->with(['employeeShifts' => function ($query) {
-                    $query->where('status', 'accepted')->with('shift');
-                }])
-                ->get()
-                ->map(function ($employee) {
-                    $totalHours = 0;
-                    $totalPay = 0;
-
-                    foreach ($employee->employeeShifts as $shiftAssignment) {
-                        if ($shiftAssignment->shift) {
-                            $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
-                            $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
-                            if ($endTime->lessThan($startTime)) {
-                                $endTime->addDay();
-                            }
-                            $hours = $endTime->diffInHours($startTime);
-                            $totalHours += $hours;
-                            $totalPay += $hours * $employee->hourly_rate;
-                        }
-                    }
-
-                    $employee->calculated_hours = $totalHours;
-                    $employee->calculated_pay = $totalPay;
-                    $employee->shifts_count = $employee->employeeShifts->count();
-                    return $employee;
-                })
-                ->filter(fn($employee) => $employee->shifts_count > 0)
-                ->sortByDesc('calculated_pay');
         }
 
-        // Fetch clients with payroll data
-        $clientsWithPay = collect();
-        if (!$userType || $userType === 'client') {
-            $clientsWithPay = User::clients()->active()
-                ->when($employeeId, fn($q) => $q->where('id', $employeeId))
-                ->with(['employeeShifts' => function ($query) {
-                    $query->where('status', 'accepted')->with('shift');
-                }])
-                ->get()
-                ->map(function ($client) {
-                    $totalHours = 0;
-                    $totalPay = 0;
-
-                    foreach ($client->employeeShifts as $shiftAssignment) {
-                        if ($shiftAssignment->shift) {
-                            $startTime = \Carbon\Carbon::parse($shiftAssignment->shift->start_time);
-                            $endTime = \Carbon\Carbon::parse($shiftAssignment->shift->end_time);
-                            if ($endTime->lessThan($startTime)) {
-                                $endTime->addDay();
-                            }
-                            $hours = $endTime->diffInHours($startTime);
-                            $totalHours += $hours;
-                            $totalPay += $hours * $client->hourly_rate;
-                        }
-                    }
-
-                    $client->calculated_hours = $totalHours;
-                    $client->calculated_pay = $totalPay;
-                    $client->shifts_count = $client->employeeShifts->count();
-                    return $client;
-                })
-                ->filter(fn($client) => $client->shifts_count > 0)
-                ->sortByDesc('calculated_pay');
+        if ($startDate && $endDate) {
+            $query->whereBetween('shift_date', [$startDate, $endDate]);
         }
 
-        $employees = User::employees()->active()->get();
-        $clients = User::clients()->active()->get();
+        $payrollData = $query->paginate(15)->appends($request->query());
 
-        // Calculate total client projected pay
-        $totalClientProjectedPay = $clientsWithPay->sum('calculated_pay');
+        // Aggregation for summary cards
+        $totalHours = $query->sum('total_hours');
+        $totalPay = $query->sum('total_pay');
 
-        return view('admin.payroll.index', compact(
+        // Instead of employeesWithPay and clientsWithPay from previous approach,
+        // group EmployeePayroll by employee type and id and aggregate total hours and pay
+
+$employeesWithPayQuery = \App\Models\User::employees()->active()
+            ->when($employeeName, function ($q) use ($employeeName) {
+                $q->where(function ($query) use ($employeeName) {
+                    $query->where('name', 'like', '%' . $employeeName . '%')
+                        ->orWhere('email', 'like', '%' . $employeeName . '%');
+                });
+            });
+
+$employeesWithPay = $employeesWithPayQuery->paginate(15);
+$employeesWithPay->getCollection()->transform(function ($employee) use ($startDate, $endDate, $month) {
+    $payrollQuery = \App\Models\EmployeePayroll::where('employee_id', $employee->id);
+
+    if ($month) {
+        try {
+            $parsedMonth = \Carbon\Carbon::createFromFormat('Y-m', $month);
+            $payrollQuery->whereYear('shift_date', $parsedMonth->year)
+                ->whereMonth('shift_date', $parsedMonth->month);
+        } catch (\Exception $e) {
+            //
+        }
+    }
+
+    if ($startDate && $endDate) {
+        $payrollQuery->whereBetween('shift_date', [$startDate, $endDate]);
+    }
+
+    $totalHours = $payrollQuery->sum('total_hours');
+    $totalPay = $payrollQuery->sum('total_pay');
+    $shiftsCount = $payrollQuery->count();
+
+    $employee->calculated_hours = $totalHours;
+    $employee->calculated_pay = $totalPay;
+    $employee->shifts_count = $shiftsCount;
+
+    return $employee;
+});
+/* Commented out to avoid Collection overriding LengthAwarePaginator for links() */
+// $employeesWithPay = $employeesWithPay->filter(function ($emp) {
+//     return $emp->shifts_count > 0;
+// });
+
+$clientsWithPayQuery = \App\Models\User::clients()->active()
+            ->when($employeeName, function ($q) use ($employeeName) {
+                $q->where(function ($query) use ($employeeName) {
+                    $query->where('name', 'like', '%' . $employeeName . '%')
+                        ->orWhere('email', 'like', '%' . $employeeName . '%');
+                });
+            });
+
+$clientsWithPay = $clientsWithPayQuery->paginate(15);
+$clientsWithPay->getCollection()->transform(function ($client) use ($startDate, $endDate, $month) {
+    $payrollQuery = \App\Models\EmployeePayroll::where('employee_id', $client->id);
+
+    if ($month) {
+        try {
+            $parsedMonth = \Carbon\Carbon::createFromFormat('Y-m', $month);
+            $payrollQuery->whereYear('shift_date', $parsedMonth->year)
+                ->whereMonth('shift_date', $parsedMonth->month);
+        } catch (\Exception $e) {
+            //
+        }
+    }
+
+    if ($startDate && $endDate) {
+        $payrollQuery->whereBetween('shift_date', [$startDate, $endDate]);
+    }
+
+    $totalHours = $payrollQuery->sum('total_hours');
+    $totalPay = $payrollQuery->sum('total_pay');
+    $shiftsCount = $payrollQuery->count();
+
+    $client->calculated_hours = $totalHours;
+    $client->calculated_pay = $totalPay;
+    $client->shifts_count = $shiftsCount;
+
+    return $client;
+});
+$clientsWithPay = $clientsWithPay->filter(function ($client) {
+    return $client->shifts_count > 0;
+});
+
+        // For payroll reports, keep original pagination of PayrollReport model
+        $payrollReportsQuery = \App\Models\PayrollReport::with(['employee', 'generator']);
+        if ($employeeId) {
+            $payrollReportsQuery->where('employee_id', $employeeId);
+        }
+        if ($month) {
+            try {
+                $parsedMonth = \Carbon\Carbon::createFromFormat('Y-m', $month);
+                $payrollReportsQuery->whereYear('period_start', $parsedMonth->year)
+                    ->whereMonth('period_start', $parsedMonth->month);
+            } catch (\Exception $e) {
+                // ignore
+            }
+        }
+        if ($startDate && $endDate) {
+            $payrollReportsQuery->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('period_start', [$startDate, $endDate])
+                    ->orWhereBetween('period_end', [$startDate, $endDate]);
+            });
+        }
+        $payrollReports = $payrollReportsQuery->paginate(15)->appends($request->except('page'));
+
+$employees = \App\Models\User::employees()->active()->get();
+$clients = \App\Models\User::clients()->active()->get();
+
+$totalProjectedPay = $employeesWithPay->sum('calculated_pay');
+$totalClientProjectedPay = $clientsWithPay->sum('calculated_pay');
+
+return view('admin.payroll.index', compact(
             'payrollReports',
             'totalProjectedPay',
+            'totalClientProjectedPay',
             'employeesWithPay',
             'clientsWithPay',
-            'totalClientProjectedPay',
-            'employees',
-            'clients',
             'employeeId',
-            'userType'
+            'employeeName',
+            'userType',
+            'month',
+            'startDate',
+            'endDate',
+            'employees',
+            'clients'
         ));
     }
 

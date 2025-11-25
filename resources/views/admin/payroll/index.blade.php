@@ -309,7 +309,29 @@
 
         <input type="hidden" name="employee_id" id="selectedEmployeeId" value="{{ $employeeId ?? '' }}">
 
-        @if (request()->has('employee_id'))
+        <!-- Month Filter -->
+        <label for="month" style="font-weight: 600; color: #374151;">Month:</label>
+        <input type="month" id="month" name="month" value="{{ old('month', $month) }}"
+            onchange="this.form.submit()"
+            style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+
+        <!-- Start Date Filter -->
+        <label for="start_date" style="font-weight: 600; color: #374151;">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ old('start_date', $startDate) }}"
+            onchange="this.form.submit()"
+            style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+
+        <!-- End Date Filter -->
+        <label for="end_date" style="font-weight: 600; color: #374151;">End Date:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ old('end_date', $endDate) }}"
+            onchange="this.form.submit()"
+            style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+
+        <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1rem; border-radius: 0.5rem;">
+            Apply Filters
+        </button>
+
+        @if (request()->hasAny(['employee_id', 'month', 'start_date', 'end_date']))
             <a href="{{ route('admin.payroll.index') }}" class="btn btn-secondary"
                 style="background: #6b7280; color: white; border-color: #6b7280; padding: 0.65rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">
                 Clear Filter
@@ -403,6 +425,9 @@
                         </tbody>
                     </table>
                 </div>
+                <div style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
+                    {{ $employeesWithPay->links() }}
+                </div>
             @else
                 <div class="empty-state">
                     <div class="empty-state-icon">📅</div>
@@ -469,6 +494,9 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+                <div style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
+                    {{ $clientsWithPay->links() }}
                 </div>
             @else
                 <div class="empty-state">

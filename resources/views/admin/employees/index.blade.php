@@ -293,12 +293,12 @@
 <div class="page-header">
     <div class="page-header-content">
         <div class="page-title">
-            <i class="fas fa-users"></i>
-            <h2>Users Management</h2>
+            <i class="fas fa-user-tie"></i>
+            <h2>Employees Management</h2>
         </div>
         <a href="{{ route('admin.employees.create') }}" class="btn-add">
             <i class="fas fa-plus"></i>
-            <span>Add User</span>
+            <span>Add Employee</span>
         </a>
     </div>
 </div>
