@@ -22,8 +22,9 @@ class AdminController extends Controller
         $pendingShiftRequests = EmployeeShift::whereIn('status', ['pending', 'assigned'])->count();
         $todayAttendance = AttendanceLog::where('attendance_date', today())->count();
 
-        $recentAttendance = AttendanceLog::with(['employee', 'shift'])
-            ->latest()
+        $recentAttendance = EmployeeShift::where('status', 'accepted')
+            ->with(['employee', 'shift', 'attendanceLog'])
+            ->orderBy('responded_at', 'desc')
             ->take(10)
             ->get();
 
@@ -79,22 +80,24 @@ class AdminController extends Controller
 
             // Recent Attendance Section
             fputcsv($handle, ['RECENT ATTENDANCE']);
-            fputcsv($handle, ['Employee Name', 'Email', 'Status', 'Date', 'Login Time', 'Logout Time', 'Total Hours']);
+            fputcsv($handle, ['Employee Name', 'Email', 'Attendance Status', 'Accepted Date', 'Login Time', 'Logout Time', 'Total Hours']);
 
-            $recentAttendance = AttendanceLog::with(['employee', 'shift'])
-                ->latest()
+            $recentAttendance = EmployeeShift::where('status', 'accepted')
+                ->with(['employee', 'shift', 'attendanceLog'])
+                ->orderBy('responded_at', 'desc')
                 ->take(10)
                 ->get();
 
-            foreach ($recentAttendance as $attendance) {
+            foreach ($recentAttendance as $shift) {
+                $attendance = $shift->attendanceLog;
                 fputcsv($handle, [
-                    $attendance->employee->name,
-                    $attendance->employee->email,
-                    ucfirst($attendance->status),
-                    $attendance->attendance_date->format('Y-m-d'),
-                    $attendance->login_time ?? '',
-                    $attendance->logout_time ?? '',
-                    $attendance->total_hours ?? ''
+                    $shift->employee->name,
+                    $shift->employee->email,
+                    $attendance ? ucfirst($attendance->status) : 'Not Logged',
+                    $shift->responded_at ? $shift->responded_at->format('Y-m-d') : 'N/A',
+                    $attendance ? ($attendance->login_time ?? '') : '',
+                    $attendance ? ($attendance->logout_time ?? '') : '',
+                    $attendance ? ($attendance->total_hours ?? '') : ''
                 ]);
             }
 
@@ -427,12 +430,43 @@ class AdminController extends Controller
     }
 
     // Attendance CRUD
-    public function attendance()
+    public function attendance(Request $request)
     {
-        $attendanceLogs = AttendanceLog::with(['employee', 'shift'])
-            ->latest()
-            ->paginate(15);
-        return view('admin.attendance.index', compact('attendanceLogs'));
+        $query = AttendanceLog::with(['employee', 'shift']);
+
+        // Employee filter
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
+        // Date range filter
+        if ($request->filled('start_date')) {
+            $query->where('attendance_date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->where('attendance_date', '<=', $request->end_date);
+        }
+
+        // Month filter
+        if ($request->filled('month')) {
+            $month = $request->month;
+            $query->whereYear('attendance_date', date('Y', strtotime($month)))
+                  ->whereMonth('attendance_date', date('m', strtotime($month)));
+        }
+
+        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(15);
+
+        // Get employees for filter dropdown
+        $employees = User::where('role', 'employee')->get();
+
+        // Get filter values for form
+        $employeeId = $request->employee_id;
+        $month = $request->month;
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+
+        return view('admin.attendance.index', compact('attendanceLogs', 'employees', 'employeeId', 'month', 'startDate', 'endDate'));
     }
 
     public function createAttendance()
