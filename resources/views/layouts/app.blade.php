@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,7 +16,7 @@
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    @stack('styles')
     <!-- Custom CSS -->
     <style>
         :root {
@@ -355,12 +356,14 @@
             .d-lg-none {
                 display: block !important;
             }
+
             .d-lg-block {
                 display: none !important;
             }
         }
     </style>
 </head>
+
 <body>
     <div id="app">
         <!-- Mobile Overlay -->
@@ -375,24 +378,27 @@
                 <button class="sidebar-toggle d-lg-none" type="button" id="mobileSidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
-                 <a class="navbar-brand ms-2" href="{{ Auth::check() ? (Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isClient() ? route('client.dashboard') : route('employee.dashboard'))) : url('/') }}">
+                <a class="navbar-brand ms-2"
+                    href="{{ Auth::check() ? (Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->isClient() ? route('client.dashboard') : route('employee.dashboard'))) : url('/') }}">
                     EMS
                 </a>
                 <div class="ms-auto">
                     @auth
                         <div class="dropdown user-dropdown">
-                            <button class="btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown"
+                                aria-expanded="false">
                                 {{ Auth::user()->name }}
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                         <i class="fas fa-sign-out-alt me-2"></i> Logout
                                     </a>
                                 </li>
                             </ul>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none" onsubmit="return checkLogoutSubmission()">
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none"
+                                onsubmit="return checkLogoutSubmission()">
                                 @csrf
                             </form>
 
@@ -435,54 +441,67 @@
         </nav>
 
         @auth
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebarMenu">
-            <div class="sidebar-content">
-                <!-- Admin Menu -->
-                @if(Auth::user()->isAdmin())
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Menu</h2>
-                        <ul class="menu-items">
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
-                                    <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
-                                    <span class="menu-text">Dashboard</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('admin.employees*') ? 'active' : '' }}" href="{{ route('admin.employees.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
-                                    <span class="menu-text">Employees</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('admin.clients*') ? 'active' : '' }}" href="{{ route('admin.clients.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-user-friends"></i></span>
-                                    <span class="menu-text">Clients</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('admin.shifts*') ? 'active' : '' }}" href="{{ route('admin.shifts.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-clock"></i></span>
-                                    <span class="menu-text">Shifts</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('admin.attendance*') ? 'active' : '' }}" href="{{ route('admin.attendance.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
-                                    <span class="menu-text">Attendance</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('admin.payroll*') ? 'active' : '' }}" href="{{ route('admin.payroll.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
-                                    <span class="menu-text">Payroll</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebarMenu">
+                <div class="sidebar-content">
+                    <!-- Admin Menu -->
+                    @if (Auth::user()->isAdmin())
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Menu</h2>
+                            <ul class="menu-items">
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
+                                        href="{{ route('admin.dashboard') }}">
+                                        <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+                                        <span class="menu-text">Dashboard</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('admin.employees*') ? 'active' : '' }}"
+                                        href="{{ route('admin.employees.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
+                                        <span class="menu-text">Employees</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('admin.clients*') ? 'active' : '' }}"
+                                        href="{{ route('admin.clients.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-user-friends"></i></span>
+                                        <span class="menu-text">Clients</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('admin.shifts*') ? 'active' : '' }}"
+                                        href="{{ route('admin.shifts.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-clock"></i></span>
+                                        <span class="menu-text">Shifts</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('admin.employee-attendance*') ? 'active' : '' }}"
+                                        href="{{ route('admin.employee-attendance.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+                                        <span class="menu-text">Employee Attendance</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('admin.client-attendance*') ? 'active' : '' }}"
+                                        href="{{ route('admin.client-attendance.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+                                        <span class="menu-text">Client Attendance</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('admin.payroll*') ? 'active' : '' }}"
+                                        href="{{ route('admin.payroll.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
+                                        <span class="menu-text">Payroll</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
-                    {{-- <div class="menu-group">
+                        {{-- <div class="menu-group">
                         <h2 class="menu-group-title">Others</h2>
                         <ul class="menu-items">
                             <li class="menu-item">
@@ -500,160 +519,177 @@
                         </ul>
                     </div> --}}
 
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Account</h2>
-                        <ul class="menu-items">
-                            <li class="menu-item">
-                                <a class="menu-link" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                    <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
-                                    <span class="menu-text">Logout</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                @elseif(Auth::user()->isClient())
-                    <!-- Client Menu -->
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Menu</h2>
-                        <ul class="menu-items">
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('client.dashboard') ? 'active' : '' }}" href="{{ route('client.dashboard') }}">
-                                    <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
-                                    <span class="menu-text">Dashboard</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('client.shifts*') ? 'active' : '' }}" href="{{ route('client.shifts.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-clock"></i></span>
-                                    <span class="menu-text">My Shifts</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('client.attendance*') ? 'active' : '' }}" href="{{ route('client.attendance.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
-                                    <span class="menu-text">Attendance</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('client.payroll*') ? 'active' : '' }}" href="{{ route('client.payroll.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
-                                    <span class="menu-text">Payroll</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Account</h2>
+                            <ul class="menu-items">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('logout') }}"
+                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
+                                        <span class="menu-text">Logout</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @elseif(Auth::user()->isClient())
+                        <!-- Client Menu -->
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Menu</h2>
+                            <ul class="menu-items">
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('client.dashboard') ? 'active' : '' }}"
+                                        href="{{ route('client.dashboard') }}">
+                                        <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+                                        <span class="menu-text">Dashboard</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('client.shifts*') ? 'active' : '' }}"
+                                        href="{{ route('client.shifts.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-clock"></i></span>
+                                        <span class="menu-text">My Shifts</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('client.attendance*') ? 'active' : '' }}"
+                                        href="{{ route('client.attendance.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+                                        <span class="menu-text">Attendance</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('client.payroll*') ? 'active' : '' }}"
+                                        href="{{ route('client.payroll.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
+                                        <span class="menu-text">Payroll</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Others</h2>
-                        <ul class="menu-items">
-                            {{-- <li class="menu-item">
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Others</h2>
+                            <ul class="menu-items">
+                                {{-- <li class="menu-item">
                                 <a class="menu-link {{ request()->routeIs('client.requests*') ? 'active' : '' }}" href="{{ route('client.requests.index') }}">
                                     <span class="menu-icon"><i class="fas fa-exchange-alt"></i></span>
                                     <span class="menu-text">Shift Requests</span>
                                 </a>
                             </li> --}}
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('client.profile*') ? 'active' : '' }}" href="{{ route('client.profile.edit') }}">
-                                    <span class="menu-icon"><i class="fas fa-user"></i></span>
-                                    <span class="menu-text">Profile</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('client.profile*') ? 'active' : '' }}"
+                                        href="{{ route('client.profile.edit') }}">
+                                        <span class="menu-icon"><i class="fas fa-user"></i></span>
+                                        <span class="menu-text">Profile</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Account</h2>
-                        <ul class="menu-items">
-                            <li class="menu-item">
-                                <a class="menu-link" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                    <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
-                                    <span class="menu-text">Logout</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                @else
-                    <!-- Employee Menu -->
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Menu</h2>
-                        <ul class="menu-items">
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}" href="{{ route('employee.dashboard') }}">
-                                    <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
-                                    <span class="menu-text">Dashboard</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('employee.shifts*') ? 'active' : '' }}" href="{{ route('employee.shifts.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-clock"></i></span>
-                                    <span class="menu-text">My Shifts</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('employee.attendance*') ? 'active' : '' }}" href="{{ route('employee.attendance.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
-                                    <span class="menu-text">Attendance</span>
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('employee.payroll*') ? 'active' : '' }}" href="{{ route('employee.payroll.index') }}">
-                                    <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
-                                    <span class="menu-text">Payroll</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Account</h2>
+                            <ul class="menu-items">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('logout') }}"
+                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
+                                        <span class="menu-text">Logout</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @else
+                        <!-- Employee Menu -->
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Menu</h2>
+                            <ul class="menu-items">
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}"
+                                        href="{{ route('employee.dashboard') }}">
+                                        <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+                                        <span class="menu-text">Dashboard</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('employee.shifts*') ? 'active' : '' }}"
+                                        href="{{ route('employee.shifts.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-clock"></i></span>
+                                        <span class="menu-text">My Shifts</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('employee.attendance*') ? 'active' : '' }}"
+                                        href="{{ route('employee.attendance.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
+                                        <span class="menu-text">Attendance</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('employee.payroll*') ? 'active' : '' }}"
+                                        href="{{ route('employee.payroll.index') }}">
+                                        <span class="menu-icon"><i class="fas fa-dollar-sign"></i></span>
+                                        <span class="menu-text">Payroll</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Others</h2>
-                        <ul class="menu-items">
-                            {{-- <li class="menu-item">
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Others</h2>
+                            <ul class="menu-items">
+                                {{-- <li class="menu-item">
                                 <a class="menu-link {{ request()->routeIs('employee.requests*') ? 'active' : '' }}" href="{{ route('employee.requests.index') }}">
                                     <span class="menu-icon"><i class="fas fa-exchange-alt"></i></span>
                                     <span class="menu-text">Shift Requests</span>
                                 </a>
                             </li> --}}
-                            <li class="menu-item">
-                                <a class="menu-link {{ request()->routeIs('employee.profile*') ? 'active' : '' }}" href="{{ route('employee.profile.edit') }}">
-                                    <span class="menu-icon"><i class="fas fa-user"></i></span>
-                                    <span class="menu-text">Profile</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                                <li class="menu-item">
+                                    <a class="menu-link {{ request()->routeIs('employee.profile*') ? 'active' : '' }}"
+                                        href="{{ route('employee.profile.edit') }}">
+                                        <span class="menu-icon"><i class="fas fa-user"></i></span>
+                                        <span class="menu-text">Profile</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
-                    <div class="menu-group">
-                        <h2 class="menu-group-title">Account</h2>
-                        <ul class="menu-items">
-                            <li class="menu-item">
-                                <a class="menu-link" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                    <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
-                                    <span class="menu-text">Logout</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                @endif
-            </div>
-        </aside>
+                        <div class="menu-group">
+                            <h2 class="menu-group-title">Account</h2>
+                            <ul class="menu-items">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('logout') }}"
+                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
+                                        <span class="menu-text">Logout</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @endif
+                </div>
+            </aside>
         @endauth
 
         <!-- Main Content -->
         <main class="main-content" id="mainContent">
             <div class="container-fluid">
                 @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-bottom: 1rem;">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert"
+                        style="margin-bottom: 1rem;">
                         <i class="fas fa-check-circle me-2"></i>
                         {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                            aria-label="Close"></button>
                     </div>
                 @endif
 
                 @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 1rem;">
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert"
+                        style="margin-bottom: 1rem;">
                         <i class="fas fa-exclamation-circle me-2"></i>
                         {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                            aria-label="Close"></button>
                     </div>
                 @endif
 
@@ -665,7 +701,9 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
@@ -711,7 +749,8 @@
             document.querySelectorAll('form').forEach(form => {
                 if (!form.action.includes('/login')) {
                     form.addEventListener('submit', function(e) {
-                        const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+                        const submitButton = form.querySelector(
+                            'button[type="submit"], input[type="submit"]');
                         if (submitButton && !submitButton.disabled) {
                             disableButton(submitButton, 'Submitting...');
                         }
@@ -751,22 +790,25 @@
 
         // Delete functions
         function deleteEmployee(id, name) {
-            deleteUrl = '{{ route("admin.employees.index") }}/' + id;
-            document.getElementById('deleteMessage').textContent = `Are you sure you want to delete employee "${name}"? This action cannot be undone.`;
+            deleteUrl = '{{ route('admin.employees.index') }}/' + id;
+            document.getElementById('deleteMessage').textContent =
+                `Are you sure you want to delete employee "${name}"? This action cannot be undone.`;
             const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
             modal.show();
         }
 
         function deleteShift(id, name) {
-            deleteUrl = '{{ route("admin.shifts.index") }}/' + id;
-            document.getElementById('deleteMessage').textContent = `Are you sure you want to delete shift "${name}"? This action cannot be undone.`;
+            deleteUrl = '{{ route('admin.shifts.index') }}/' + id;
+            document.getElementById('deleteMessage').textContent =
+                `Are you sure you want to delete shift "${name}"? This action cannot be undone.`;
             const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
             modal.show();
         }
 
         function deleteAttendance(id, description) {
-            deleteUrl = '{{ route("admin.attendance.index") }}/' + id;
-            document.getElementById('deleteMessage').textContent = `Are you sure you want to delete attendance record "${description}"? This action cannot be undone.`;
+            deleteUrl = '{{ route('admin.attendance.index') }}/' + id;
+            document.getElementById('deleteMessage').textContent =
+                `Are you sure you want to delete attendance record "${description}"? This action cannot be undone.`;
             const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
             modal.show();
         }
@@ -803,7 +845,8 @@
 
             const alertDiv = document.createElement('div');
             alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
-            alertDiv.style.cssText = 'margin-bottom: 1rem; position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.style.cssText =
+                'margin-bottom: 1rem; position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
             alertDiv.innerHTML = `
                 <i class="fas ${iconClass} me-2"></i>
                 ${message}
@@ -876,4 +919,5 @@
         });
     </script>
 </body>
+
 </html>
