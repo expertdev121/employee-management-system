@@ -309,6 +309,83 @@
         border-top: 1px solid #e5e7eb;
     }
 
+    /* Custom Pagination Styles */
+    .pagination-custom {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pagination-custom .page-item {
+        margin: 0;
+    }
+
+    .pagination-custom .page-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0.5rem 0.75rem;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        margin: 0 0.125rem;
+    }
+
+    .pagination-custom .page-link:hover {
+        border-color: var(--primary);
+        background: #eff6ff;
+        color: var(--primary);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .pagination-custom .page-item.active .page-link {
+        background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+        border-color: var(--primary);
+        color: white;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    }
+
+    .pagination-custom .page-item.disabled .page-link {
+        background: #f9fafb;
+        border-color: #e5e7eb;
+        color: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .pagination-custom .page-link:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Previous/Next button specific styles */
+    .pagination-custom .page-item:first-child .page-link,
+    .pagination-custom .page-item:last-child .page-link {
+        font-weight: 600;
+        min-width: 50px;
+    }
+
+    .pagination-custom .page-item:first-child .page-link::before {
+        content: "«";
+        margin-right: 0.25rem;
+    }
+
+    .pagination-custom .page-item:last-child .page-link::after {
+        content: "»";
+        margin-left: 0.25rem;
+    }
+
     @media (max-width: 768px) {
         .page-header-content {
             flex-direction: column;
@@ -500,7 +577,44 @@
 
         @if($attendanceLogs->hasPages())
         <div class="pagination-wrapper">
-            {{ $attendanceLogs->links() }}
+            <nav aria-label="Attendance pagination">
+                <ul class="pagination-custom">
+                    {{-- Previous Page Link --}}
+                    @if ($attendanceLogs->onFirstPage())
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                    @else
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $attendanceLogs->previousPageUrl() }}" rel="prev">Previous</a>
+                        </li>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    @foreach ($attendanceLogs->getUrlRange(1, $attendanceLogs->lastPage()) as $page => $url)
+                        @if ($page == $attendanceLogs->currentPage())
+                            <li class="page-item active">
+                                <span class="page-link">{{ $page }}</span>
+                            </li>
+                        @else
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                            </li>
+                        @endif
+                    @endforeach
+
+                    {{-- Next Page Link --}}
+                    @if ($attendanceLogs->hasMorePages())
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $attendanceLogs->nextPageUrl() }}" rel="next">Next</a>
+                        </li>
+                    @else
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                    @endif
+                </ul>
+            </nav>
         </div>
         @endif
     </div>

@@ -104,7 +104,7 @@ class EmployeeController extends Controller
         $attendanceLogs = AttendanceLog::where('employee_id', $user->id)
             ->with(['shift'])
             ->latest('attendance_date')
-            ->paginate(15);
+            ->paginate(8);
 
         // Load the corresponding employee shift if it exists (even if unassigned)
         foreach ($attendanceLogs as $attendance) {

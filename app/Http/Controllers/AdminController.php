@@ -455,7 +455,7 @@ class AdminController extends Controller
                   ->whereMonth('attendance_date', date('m', strtotime($month)));
         }
 
-        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(15);
+        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(8);
 
         // Get employees for filter dropdown
         $employees = User::where('role', 'employee')->get();
