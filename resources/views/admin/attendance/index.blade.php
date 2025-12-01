@@ -404,7 +404,7 @@
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>Employee</th>
+                        <th>Name/Email</th>
                         <th>Attendance Date</th>
                         <th>Total Hours</th>
                         <th>Status</th>

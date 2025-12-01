@@ -629,10 +629,18 @@ $employeesWithPay->getCollection()->transform(function ($employee) use ($startDa
 
     return $employee;
 });
-/* Commented out to avoid Collection overriding LengthAwarePaginator for links() */
-// $employeesWithPay = $employeesWithPay->filter(function ($emp) {
-//     return $emp->shifts_count > 0;
-// });
+
+// Filter and re-paginate to maintain LengthAwarePaginator
+$filteredEmployees = $employeesWithPay->getCollection()->filter(function ($emp) {
+    return $emp->shifts_count > 0;
+});
+$employeesWithPay = new \Illuminate\Pagination\LengthAwarePaginator(
+    $filteredEmployees->forPage($employeesWithPay->currentPage(), $employeesWithPay->perPage()),
+    $filteredEmployees->count(),
+    $employeesWithPay->perPage(),
+    $employeesWithPay->currentPage(),
+    ['path' => $employeesWithPay->path(), 'pageName' => $employeesWithPay->getPageName()]
+);
 
 $clientsWithPayQuery = \App\Models\User::clients()->active()
             ->when($employeeName, function ($q) use ($employeeName) {
@@ -670,9 +678,18 @@ $clientsWithPay->getCollection()->transform(function ($client) use ($startDate, 
 
     return $client;
 });
-$clientsWithPay = $clientsWithPay->filter(function ($client) {
+
+// Filter and re-paginate to maintain LengthAwarePaginator
+$filteredClients = $clientsWithPay->getCollection()->filter(function ($client) {
     return $client->shifts_count > 0;
 });
+$clientsWithPay = new \Illuminate\Pagination\LengthAwarePaginator(
+    $filteredClients->forPage($clientsWithPay->currentPage(), $clientsWithPay->perPage()),
+    $filteredClients->count(),
+    $clientsWithPay->perPage(),
+    $clientsWithPay->currentPage(),
+    ['path' => $clientsWithPay->path(), 'pageName' => $clientsWithPay->getPageName()]
+);
 
         // For payroll reports, keep original pagination of PayrollReport model
         $payrollReportsQuery = \App\Models\PayrollReport::with(['employee', 'generator']);
