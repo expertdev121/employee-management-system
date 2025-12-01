@@ -329,7 +329,7 @@
     }
 </style>
 
-{{-- <div class="page-header">
+<div class="page-header">
     <div class="page-header-content">
         <div class="page-title">
             <i class="fas fa-calendar-check"></i>
@@ -340,7 +340,63 @@
             <span>Add Manual Entry</span>
         </a>
     </div>
-</div> --}}
+</div>
+
+<!-- Employee Filter -->
+<form method="GET" action="{{ route('admin.attendance.index') }}" class="employee-filter"
+    style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+
+    <div style="position: relative; width: 320px;">
+        <input type="text" id="employeeSearch" name="employee_name" placeholder="🔍 Search employee name or email..."
+            value="{{ isset($employeeId) && $employeeId ? ($employees->firstWhere('id', $employeeId)->name ?? '') : '' }}"
+            style="width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db; font-size: 0.9rem;"
+            onkeyup="filterEmployees(this.value)">
+
+        <div id="employeeList"
+            style="position: absolute; top: 105%; left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; max-height: 200px; overflow-y: auto; z-index: 10; display: none;">
+            @foreach ($employees as $employee)
+                <div class="employee-item" data-id="{{ $employee->id }}" data-name="{{ strtolower($employee->name) }}"
+                    data-email="{{ strtolower($employee->email) }}"
+                    style="padding: 0.5rem 1rem; cursor: pointer; border-bottom: 1px solid #f3f4f6;"
+                    onclick="selectEmployee({{ $employee->id }}, '{{ addslashes($employee->name) }}')">
+                    {{ $employee->name }} <br>
+                    <span style="font-size: 0.8rem; color: #6b7280;">{{ $employee->email }}</span>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <input type="hidden" name="employee_id" id="selectedEmployeeId" value="{{ $employeeId ?? '' }}">
+
+    <!-- Month Filter -->
+    <label for="month" style="font-weight: 600; color: #374151;">Month:</label>
+    <input type="month" id="month" name="month" value="{{ old('month', $month) }}"
+        onchange="this.form.submit()"
+        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+
+    <!-- Start Date Filter -->
+    <label for="start_date" style="font-weight: 600; color: #374151;">Start Date:</label>
+    <input type="date" id="start_date" name="start_date" value="{{ old('start_date', $startDate) }}"
+        onchange="this.form.submit()"
+        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+
+    <!-- End Date Filter -->
+    <label for="end_date" style="font-weight: 600; color: #374151;">End Date:</label>
+    <input type="date" id="end_date" name="end_date" value="{{ old('end_date', $endDate) }}"
+        onchange="this.form.submit()"
+        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+
+    <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1rem; border-radius: 0.5rem;">
+        Apply Filters
+    </button>
+
+    @if (request()->hasAny(['employee_id', 'month', 'start_date', 'end_date']))
+        <a href="{{ route('admin.attendance.index') }}" class="btn btn-secondary"
+            style="background: #6b7280; color: white; border-color: #6b7280; padding: 0.65rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">
+            Clear Filter
+        </a>
+    @endif
+</form>
 
 <div class="dashboard-card">
     <div class="card-body">
@@ -449,4 +505,48 @@
         @endif
     </div>
 </div>
+
+<script>
+    function filterEmployees(searchTerm) {
+        const list = document.getElementById('employeeList');
+        const items = list.querySelectorAll('.employee-item');
+        searchTerm = searchTerm.toLowerCase().trim();
+
+        if (searchTerm.length === 0) {
+            list.style.display = 'none';
+            return;
+        }
+
+        let found = false;
+        items.forEach(item => {
+            const name = item.getAttribute('data-name');
+            const email = item.getAttribute('data-email');
+            if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                item.style.display = 'block';
+                found = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        list.style.display = found ? 'block' : 'none';
+    }
+
+    function selectEmployee(id, name) {
+        document.getElementById('selectedEmployeeId').value = id;
+        document.getElementById('employeeSearch').value = name;
+        document.getElementById('employeeList').style.display = 'none';
+        document.querySelector('.employee-filter').submit();
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(event) {
+        const list = document.getElementById('employeeList');
+        const search = document.getElementById('employeeSearch');
+        if (!search.contains(event.target) && !list.contains(event.target)) {
+            list.style.display = 'none';
+        }
+    });
+</script>
+
 @endsection

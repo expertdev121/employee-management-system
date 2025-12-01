@@ -430,12 +430,43 @@ class AdminController extends Controller
     }
 
     // Attendance CRUD
-    public function attendance()
+    public function attendance(Request $request)
     {
-        $attendanceLogs = AttendanceLog::with(['employee', 'shift'])
-            ->orderBy('attendance_date', 'desc')
-            ->paginate(15);
-        return view('admin.attendance.index', compact('attendanceLogs'));
+        $query = AttendanceLog::with(['employee', 'shift']);
+
+        // Employee filter
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
+        // Date range filter
+        if ($request->filled('start_date')) {
+            $query->where('attendance_date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->where('attendance_date', '<=', $request->end_date);
+        }
+
+        // Month filter
+        if ($request->filled('month')) {
+            $month = $request->month;
+            $query->whereYear('attendance_date', date('Y', strtotime($month)))
+                  ->whereMonth('attendance_date', date('m', strtotime($month)));
+        }
+
+        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(15);
+
+        // Get employees for filter dropdown
+        $employees = User::where('role', 'employee')->get();
+
+        // Get filter values for form
+        $employeeId = $request->employee_id;
+        $month = $request->month;
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+
+        return view('admin.attendance.index', compact('attendanceLogs', 'employees', 'employeeId', 'month', 'startDate', 'endDate'));
     }
 
     public function createAttendance()
