@@ -349,7 +349,7 @@
                 <thead>
                     <tr>
                         <th>Employee</th>
-                        <th>Date</th>
+                        <th>Attendance Date</th>
                         <th>Total Hours</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -402,10 +402,10 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge-custom badge-{{ $log->status === 'present' ? 'success' : ($log->status === 'absent' ? 'danger' : 'warning') }}">
-                                @if($log->status === 'present')
+                            <span class="badge-custom badge-{{ $log->status == 'present' ? 'success' : ($log->status == 'absent' ? 'danger' : 'warning') }}">
+                                @if($log->status == 'present')
                                     <i class="fas fa-check" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
-                                @elseif($log->status === 'absent')
+                                @elseif($log->status == 'absent')
                                     <i class="fas fa-times" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>
                                 @else
                                     <i class="fas fa-clock" style="font-size: 0.75rem; margin-right: 0.375rem;"></i>

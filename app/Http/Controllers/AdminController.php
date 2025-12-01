@@ -22,8 +22,9 @@ class AdminController extends Controller
         $pendingShiftRequests = EmployeeShift::whereIn('status', ['pending', 'assigned'])->count();
         $todayAttendance = AttendanceLog::where('attendance_date', today())->count();
 
-        $recentAttendance = AttendanceLog::with(['employee', 'shift'])
-            ->latest()
+        $recentAttendance = EmployeeShift::where('status', 'accepted')
+            ->with(['employee', 'shift', 'attendanceLog'])
+            ->orderBy('responded_at', 'desc')
             ->take(10)
             ->get();
 
@@ -79,22 +80,24 @@ class AdminController extends Controller
 
             // Recent Attendance Section
             fputcsv($handle, ['RECENT ATTENDANCE']);
-            fputcsv($handle, ['Employee Name', 'Email', 'Status', 'Date', 'Login Time', 'Logout Time', 'Total Hours']);
+            fputcsv($handle, ['Employee Name', 'Email', 'Attendance Status', 'Accepted Date', 'Login Time', 'Logout Time', 'Total Hours']);
 
-            $recentAttendance = AttendanceLog::with(['employee', 'shift'])
-                ->latest()
+            $recentAttendance = EmployeeShift::where('status', 'accepted')
+                ->with(['employee', 'shift', 'attendanceLog'])
+                ->orderBy('responded_at', 'desc')
                 ->take(10)
                 ->get();
 
-            foreach ($recentAttendance as $attendance) {
+            foreach ($recentAttendance as $shift) {
+                $attendance = $shift->attendanceLog;
                 fputcsv($handle, [
-                    $attendance->employee->name,
-                    $attendance->employee->email,
-                    ucfirst($attendance->status),
-                    $attendance->attendance_date->format('Y-m-d'),
-                    $attendance->login_time ?? '',
-                    $attendance->logout_time ?? '',
-                    $attendance->total_hours ?? ''
+                    $shift->employee->name,
+                    $shift->employee->email,
+                    $attendance ? ucfirst($attendance->status) : 'Not Logged',
+                    $shift->responded_at ? $shift->responded_at->format('Y-m-d') : 'N/A',
+                    $attendance ? ($attendance->login_time ?? '') : '',
+                    $attendance ? ($attendance->logout_time ?? '') : '',
+                    $attendance ? ($attendance->total_hours ?? '') : ''
                 ]);
             }
 
@@ -430,7 +433,7 @@ class AdminController extends Controller
     public function attendance()
     {
         $attendanceLogs = AttendanceLog::with(['employee', 'shift'])
-            ->latest()
+            ->orderBy('attendance_date', 'desc')
             ->paginate(15);
         return view('admin.attendance.index', compact('attendanceLogs'));
     }
