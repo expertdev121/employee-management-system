@@ -310,7 +310,7 @@
             @if($shift->status === 'active')
             <button type="button" class="btn-custom btn-primary-custom" data-bs-toggle="modal" data-bs-target="#assignEmployeeModal">
                 <i class="fas fa-user-plus"></i>
-                <span>Assign Employee</span>
+                <span>Assign Shift</span>
             </button>
             @endif
             <a href="{{ route('admin.shifts.edit', $shift) }}" class="btn-custom btn-warning-custom">
@@ -405,7 +405,7 @@
                 <div class="info-section">
                     <h4 class="section-title">
                         <i class="fas fa-users"></i>
-                        Assigned Employees
+                        Assigned
                     </h4>
                     @if($shift->employeeShifts->where('status', '!=', 'unassigned')->count() > 0)
                         @foreach($shift->employeeShifts->where('status', '!=', 'unassigned') as $assignment)
@@ -532,7 +532,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="assignEmployeeModalLabel">Assign Employee to Shift</h5>
+                <h5 class="modal-title" id="assignEmployeeModalLabel">Assign Shift</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('admin.shifts.assign', $shift) }}" method="POST">
@@ -540,15 +540,22 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="employee_id" class="form-label">Select Employee <span class="text-danger">*</span></label>
-                        <select class="form-control @error('employee_id') is-invalid @enderror" id="employee_id" name="employee_id" required>
-                            <option value="">Choose an employee...</option>
-                            @php
-                                $availableEmployees = \App\Models\User::employees()->active()->get();
-                            @endphp
-                            @foreach($availableEmployees as $employee)
-                                <option value="{{ $employee->id }}">{{ $employee->name }} ({{ $employee->email }})</option>
-                            @endforeach
-                        </select>
+                        <div class="position-relative">
+                            <input type="text" class="form-control @error('employee_id') is-invalid @enderror"
+                                   id="employee_search" placeholder="Search employees and clients..."
+                                   autocomplete="off">
+                            <div id="search_results" class="search-results-dropdown" style="display: none;">
+                                @php
+                                    $availableUsers = \App\Models\User::whereIn('role', ['employee', 'client'])->active()->get();
+                                @endphp
+                                @foreach($availableUsers as $user)
+                                    <div class="search-result-item" data-id="{{ $user->id }}" data-name="{{ $user->name }} ({{ $user->email }}) - {{ ucfirst($user->role) }}">
+                                        {{ $user->name }} ({{ $user->email }}) - {{ ucfirst($user->role) }}
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        <input type="hidden" id="employee_id" name="employee_id">
                         @error('employee_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -565,7 +572,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Assign Employee</button>
+                    <button type="submit" class="btn btn-primary">Assign Shift</button>
                 </div>
             </form>
         </div>
@@ -577,7 +584,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="unassignEmployeeModalLabel">Unassign Employee from Shift</h5>
+                <h5 class="modal-title" id="unassignEmployeeModalLabel">Unassign from Shift</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="unassignForm" action="" method="POST">
@@ -589,7 +596,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Unassign Employee</button>
+                    <button type="submit" class="btn btn-danger">Unassign shift</button>
                 </div>
             </form>
         </div>
@@ -613,6 +620,201 @@ document.addEventListener('DOMContentLoaded', function() {
         shiftNameSpan.textContent = shiftName;
         unassignForm.action = `/admin/shifts/${assignmentId}/unassign`;
     });
+
+    // Handle custom search dropdown
+    const employeeSearchInput = document.getElementById('employee_search');
+    const employeeIdInput = document.getElementById('employee_id');
+    const searchResults = document.getElementById('search_results');
+    const resultItems = searchResults.querySelectorAll('.search-result-item');
+
+    let selectedIndex = -1;
+    let filteredItems = Array.from(resultItems);
+
+    // Create a map of display text to user ID for quick lookup
+    const employeeMap = {};
+    resultItems.forEach(item => {
+        const name = item.getAttribute('data-name');
+        const id = item.getAttribute('data-id');
+        employeeMap[name] = id;
+    });
+
+    function filterResults(query) {
+        const lowerQuery = query.toLowerCase();
+        filteredItems = Array.from(resultItems).filter(item => {
+            const text = item.textContent.toLowerCase();
+            const shouldShow = text.includes(lowerQuery);
+            item.style.display = shouldShow ? 'block' : 'none';
+            return shouldShow;
+        });
+        selectedIndex = -1;
+        updateSelection();
+    }
+
+    function updateSelection() {
+        resultItems.forEach((item, index) => {
+            item.classList.remove('selected');
+        });
+        if (selectedIndex >= 0 && selectedIndex < filteredItems.length) {
+            filteredItems[selectedIndex].classList.add('selected');
+            // Scroll into view
+            filteredItems[selectedIndex].scrollIntoView({
+                block: 'nearest',
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    function selectItem(item) {
+        const name = item.getAttribute('data-name');
+        const id = item.getAttribute('data-id');
+        employeeSearchInput.value = name;
+        employeeIdInput.value = id;
+        searchResults.style.display = 'none';
+        selectedIndex = -1;
+    }
+
+    employeeSearchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length > 0) {
+            filterResults(query);
+            searchResults.style.display = 'block';
+        } else {
+            searchResults.style.display = 'none';
+            employeeIdInput.value = '';
+            filteredItems = Array.from(resultItems);
+        }
+    });
+
+    employeeSearchInput.addEventListener('keydown', function(e) {
+        if (searchResults.style.display === 'none') return;
+
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, filteredItems.length - 1);
+                updateSelection();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (selectedIndex >= 0 && selectedIndex < filteredItems.length) {
+                    selectItem(filteredItems[selectedIndex]);
+                }
+                break;
+            case 'Escape':
+                searchResults.style.display = 'none';
+                selectedIndex = -1;
+                break;
+        }
+    });
+
+    employeeSearchInput.addEventListener('focus', function() {
+        if (filteredItems.length > 0) {
+            searchResults.style.display = 'block';
+        }
+    });
+
+    employeeSearchInput.addEventListener('blur', function() {
+        // Delay hiding to allow click events on items
+        setTimeout(() => {
+            if (!searchResults.matches(':hover')) {
+                searchResults.style.display = 'none';
+            }
+        }, 200);
+    });
+
+    // Handle clicks on result items with event delegation
+    searchResults.addEventListener('click', function(e) {
+        if (e.target.classList.contains('search-result-item')) {
+            e.preventDefault();
+            selectItem(e.target);
+        }
+    });
+
+    // Prevent dropdown from hiding when clicking inside it
+    searchResults.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+    });
+
+    // Validate selection on form submission
+    const assignForm = document.querySelector('#assignEmployeeModal form');
+    assignForm.addEventListener('submit', function(e) {
+        const searchValue = employeeSearchInput.value.trim();
+        if (!employeeMap[searchValue]) {
+            e.preventDefault();
+            alert('Please select a valid employee or client from the dropdown list.');
+            employeeSearchInput.focus();
+            return false;
+        }
+    });
+
+    // Clear hidden input when search is cleared
+    employeeSearchInput.addEventListener('change', function() {
+        if (!this.value.trim()) {
+            employeeIdInput.value = '';
+        }
+    });
 });
 </script>
+
+<style>
+/* Custom search dropdown styling */
+.position-relative {
+    position: relative;
+}
+
+#employee_search {
+    position: relative;
+}
+
+#employee_search::after {
+    content: "▼";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    max-height: 250px;
+    overflow-y: auto;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+}
+
+.search-result-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover,
+.search-result-item.selected {
+    background-color: #f8f9fa;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item.selected {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+</style>
 @endsection

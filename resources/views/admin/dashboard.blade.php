@@ -438,40 +438,30 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($recentAttendance as $shift)
+                                @foreach($recentAttendance as $attendance)
                                     <tr>
                                         <td>
                                             <div style="display: flex; align-items: center; gap: 0.75rem;">
                                                 <div style="width: 40px; height: 40px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 600;">
-                                                    {{ substr($shift->employee->name, 0, 1) }}
+                                                    {{ substr($attendance->employee->name, 0, 1) }}
                                                 </div>
                                                 <div>
-                                                    <div style="font-weight: 600;">{{ $shift->employee->name }}</div>
-                                                    <div style="font-size: 0.875rem; color: #6b7280;">{{ $shift->employee->email }}</div>
+                                                    <div style="font-weight: 600;">{{ $attendance->employee->name }}</div>
+                                                    <div style="font-size: 0.875rem; color: #6b7280;">{{ $attendance->employee->email }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            @if($shift->attendanceLog)
-                                                <span class="badge-custom badge-{{ $shift->attendanceLog->status == 'present' ? 'success' : ($shift->attendanceLog->status == 'absent' ? 'danger' : 'warning') }}">
-                                                    {{ ucfirst($shift->attendanceLog->status) }}
-                                                </span>
-                                            @else
-                                                <span class="badge-custom badge-warning">Not Logged</span>
-                                            @endif
+                                            <span class="badge-custom badge-{{ $attendance->status == 'present' ? 'success' : ($attendance->status == 'absent' ? 'danger' : 'warning') }}">
+                                                {{ ucfirst($attendance->status) }}
+                                            </span>
                                         </td>
                                         <td>
                                             <div style="font-weight: 500;">
-                                                @if($shift->shift_date)
-                                                    {{ $shift->shift_date->format('M d, Y') }}
-                                                @else
-                                                    Recurring
-                                                @endif
+                                                {{ $attendance->attendance_date->format('M d, Y') }}
                                             </div>
                                             <div style="font-size: 0.875rem; color: #6b7280;">
-                                                @if($shift->shift_date)
-                                                    {{ $shift->shift_date->format('l') }}
-                                                @endif
+                                                {{ $attendance->attendance_date->format('l') }}
                                             </div>
                                         </td>
                                     </tr>

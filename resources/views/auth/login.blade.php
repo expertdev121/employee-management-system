@@ -308,7 +308,7 @@
                         </div>
 
                         <!-- Remember Me & Forgot Password -->
-                        <div class="d-flex align-items-center justify-content-between" style="margin-bottom: 1.25rem;">
+                        {{-- <div class="d-flex align-items-center justify-content-between" style="margin-bottom: 1.25rem;">
                             <label for="remember" class="custom-checkbox">
                                 <div class="checkbox-wrapper">
                                     <input
@@ -334,7 +334,7 @@
                                     Forgot password?
                                 </a>
                             @endif
-                        </div>
+                        </div> --}}
 
                         <!-- Submit Button -->
                         <div>

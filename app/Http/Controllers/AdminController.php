@@ -22,10 +22,9 @@ class AdminController extends Controller
         $pendingShiftRequests = EmployeeShift::whereIn('status', ['pending', 'assigned'])->count();
         $todayAttendance = AttendanceLog::where('attendance_date', today())->count();
 
-        $recentAttendance = EmployeeShift::where('status', 'accepted')
-            ->with(['employee', 'shift', 'attendanceLog'])
-            ->orderBy('responded_at', 'desc')
-            ->take(10)
+        $recentAttendance = AttendanceLog::with(['employee', 'shift'])
+            ->orderBy('attendance_date', 'desc')
+            ->take(5)
             ->get();
 
         $assignedShifts = EmployeeShift::with(['employee', 'shift'])
@@ -455,7 +454,7 @@ class AdminController extends Controller
                   ->whereMonth('attendance_date', date('m', strtotime($month)));
         }
 
-        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(15);
+        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(8);
 
         // Get employees for filter dropdown
         $employees = User::where('role', 'employee')->get();
@@ -550,11 +549,250 @@ class AdminController extends Controller
     public function destroyAttendance(AttendanceLog $attendanceLog)
     {
         $attendanceLog->delete();
+
         return redirect()->route('admin.attendance.index')->with('success', 'Attendance record deleted successfully.');
     }
 
+    // Employee Attendance Methods
+    public function employeeAttendance(Request $request)
+    {
+        $query = AttendanceLog::with(['employee', 'shift'])
+            ->whereHas('employee', function ($q) {
+                $q->where('role', 'employee');
+            });
+
+        // Employee filter
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
+        // Month filter
+        if ($request->filled('month')) {
+            $query->whereYear('attendance_date', date('Y', strtotime($request->month)))
+                  ->whereMonth('attendance_date', date('m', strtotime($request->month)));
+        }
+
+        // Date range filters
+        if ($request->filled('start_date')) {
+            $query->whereDate('attendance_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('attendance_date', '<=', $request->end_date);
+        }
+
+        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(8);
+
+        // Get employees for filter dropdown
+        $employees = User::where('role', 'employee')->get();
+
+        $month = $request->get('month', date('Y-m'));
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $employeeId = $request->get('employee_id');
+
+        return view('admin.employee-attendance.index', compact('attendanceLogs', 'employees', 'month', 'startDate', 'endDate', 'employeeId'));
+    }
+
+    public function createEmployeeAttendance()
+    {
+        $employees = User::where('role', 'employee')->get();
+        $shifts = \App\Models\Shift::all();
+
+        return view('admin.employee-attendance.create', compact('employees', 'shifts'));
+    }
+
+    public function storeEmployeeAttendance(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'shift_id' => 'nullable|exists:shifts,id',
+            'attendance_date' => 'required|date',
+            'total_hours' => 'required|numeric|min:0|max:24',
+            'status' => 'required|in:present,absent,late',
+            'is_manual_entry' => 'boolean',
+        ]);
+
+        AttendanceLog::create([
+            'employee_id' => $request->employee_id,
+            'shift_id' => $request->shift_id,
+            'attendance_date' => $request->attendance_date,
+            'total_hours' => $request->total_hours,
+            'total_hours_minutes' => $request->total_hours * 60,
+            'status' => $request->status,
+            'is_manual_entry' => $request->is_manual_entry ?? true,
+        ]);
+
+        return redirect()->route('admin.employee-attendance.index')->with('success', 'Employee attendance record created successfully.');
+    }
+
+    public function showEmployeeAttendance(AttendanceLog $attendanceLog)
+    {
+        $attendanceLog->load(['employee', 'shift']);
+
+        return view('admin.employee-attendance.show', compact('attendanceLog'));
+    }
+
+    public function editEmployeeAttendance(AttendanceLog $attendanceLog)
+    {
+        $attendanceLog->load(['employee', 'shift']);
+        $employees = User::where('role', 'employee')->get();
+        $shifts = \App\Models\Shift::all();
+
+        return view('admin.employee-attendance.edit', compact('attendanceLog', 'employees', 'shifts'));
+    }
+
+    public function updateEmployeeAttendance(Request $request, AttendanceLog $attendanceLog)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'shift_id' => 'nullable|exists:shifts,id',
+            'attendance_date' => 'required|date',
+            'total_hours' => 'required|numeric|min:0|max:24',
+            'status' => 'required|in:present,absent,late',
+            'is_manual_entry' => 'boolean',
+        ]);
+
+        $attendanceLog->update([
+            'employee_id' => $request->employee_id,
+            'shift_id' => $request->shift_id,
+            'attendance_date' => $request->attendance_date,
+            'total_hours' => $request->total_hours,
+            'total_hours_minutes' => $request->total_hours * 60,
+            'status' => $request->status,
+            'is_manual_entry' => $request->is_manual_entry ?? true,
+        ]);
+
+        return redirect()->route('admin.employee-attendance.index')->with('success', 'Employee attendance record updated successfully.');
+    }
+
+    public function destroyEmployeeAttendance(AttendanceLog $attendanceLog)
+    {
+        $attendanceLog->delete();
+
+        return redirect()->route('admin.employee-attendance.index')->with('success', 'Employee attendance record deleted successfully.');
+    }
+
+    // Client Attendance Methods
+    public function clientAttendance(Request $request)
+    {
+        $query = AttendanceLog::with(['employee', 'shift'])
+            ->whereHas('employee', function ($q) {
+                $q->where('role', 'client');
+            });
+
+        // Employee filter
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
+        // Month filter
+        if ($request->filled('month')) {
+            $query->whereYear('attendance_date', date('Y', strtotime($request->month)))
+                  ->whereMonth('attendance_date', date('m', strtotime($request->month)));
+        }
+
+        // Date range filters
+        if ($request->filled('start_date')) {
+            $query->whereDate('attendance_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('attendance_date', '<=', $request->end_date);
+        }
+
+        $attendanceLogs = $query->orderBy('attendance_date', 'desc')->paginate(8);
+
+        // Get clients for filter dropdown
+        $employees = User::where('role', 'client')->get();
+
+        $month = $request->get('month', date('Y-m'));
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $employeeId = $request->get('employee_id');
+
+        return view('admin.client-attendance.index', compact('attendanceLogs', 'employees', 'month', 'startDate', 'endDate', 'employeeId'));
+    }
+
+    public function createClientAttendance()
+    {
+        $employees = User::where('role', 'client')->get();
+        $shifts = \App\Models\Shift::all();
+
+        return view('admin.client-attendance.create', compact('employees', 'shifts'));
+    }
+
+    public function storeClientAttendance(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'shift_id' => 'nullable|exists:shifts,id',
+            'attendance_date' => 'required|date',
+            'total_hours' => 'required|numeric|min:0|max:24',
+            'status' => 'required|in:present,absent,late',
+            'is_manual_entry' => 'boolean',
+        ]);
+
+        AttendanceLog::create([
+            'employee_id' => $request->employee_id,
+            'shift_id' => $request->shift_id,
+            'attendance_date' => $request->attendance_date,
+            'total_hours' => $request->total_hours,
+            'total_hours_minutes' => $request->total_hours * 60,
+            'status' => $request->status,
+            'is_manual_entry' => $request->is_manual_entry ?? true,
+        ]);
+
+        return redirect()->route('admin.client-attendance.index')->with('success', 'Client attendance record created successfully.');
+    }
+
+    public function showClientAttendance(AttendanceLog $attendanceLog)
+    {
+        $attendanceLog->load(['employee', 'shift']);
+
+        return view('admin.client-attendance.show', compact('attendanceLog'));
+    }
+
+    public function editClientAttendance(AttendanceLog $attendanceLog)
+    {
+        $attendanceLog->load(['employee', 'shift']);
+        $employees = User::where('role', 'client')->get();
+        $shifts = \App\Models\Shift::all();
+
+        return view('admin.client-attendance.edit', compact('attendanceLog', 'employees', 'shifts'));
+    }
+
+    public function updateClientAttendance(Request $request, AttendanceLog $attendanceLog)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'shift_id' => 'nullable|exists:shifts,id',
+            'attendance_date' => 'required|date',
+            'total_hours' => 'required|numeric|min:0|max:24',
+            'status' => 'required|in:present,absent,late',
+            'is_manual_entry' => 'boolean',
+        ]);
+
+        $attendanceLog->update([
+            'employee_id' => $request->employee_id,
+            'shift_id' => $request->shift_id,
+            'attendance_date' => $request->attendance_date,
+            'total_hours' => $request->total_hours,
+            'total_hours_minutes' => $request->total_hours * 60,
+            'status' => $request->status,
+            'is_manual_entry' => $request->is_manual_entry ?? true,
+        ]);
+
+        return redirect()->route('admin.client-attendance.index')->with('success', 'Client attendance record updated successfully.');
+    }
+
+    public function destroyClientAttendance(AttendanceLog $attendanceLog)
+    {
+        $attendanceLog->delete();
+
+        return redirect()->route('admin.client-attendance.index')->with('success', 'Client attendance record deleted successfully.');
+    }
+
     // Payroll CRUD
-public function payroll(Request $request)
+    public function payroll(Request $request)
     {
         $employeeId = $request->get('employee_id');
         $employeeName = $request->get('employee_name');
@@ -629,10 +867,18 @@ $employeesWithPay->getCollection()->transform(function ($employee) use ($startDa
 
     return $employee;
 });
-/* Commented out to avoid Collection overriding LengthAwarePaginator for links() */
-// $employeesWithPay = $employeesWithPay->filter(function ($emp) {
-//     return $emp->shifts_count > 0;
-// });
+
+// Filter and re-paginate to maintain LengthAwarePaginator
+$filteredEmployees = $employeesWithPay->getCollection()->filter(function ($emp) {
+    return $emp->shifts_count > 0;
+});
+$employeesWithPay = new \Illuminate\Pagination\LengthAwarePaginator(
+    $filteredEmployees->forPage($employeesWithPay->currentPage(), $employeesWithPay->perPage()),
+    $filteredEmployees->count(),
+    $employeesWithPay->perPage(),
+    $employeesWithPay->currentPage(),
+    ['path' => $employeesWithPay->path(), 'pageName' => $employeesWithPay->getPageName()]
+);
 
 $clientsWithPayQuery = \App\Models\User::clients()->active()
             ->when($employeeName, function ($q) use ($employeeName) {
@@ -670,9 +916,18 @@ $clientsWithPay->getCollection()->transform(function ($client) use ($startDate, 
 
     return $client;
 });
-$clientsWithPay = $clientsWithPay->filter(function ($client) {
+
+// Filter and re-paginate to maintain LengthAwarePaginator
+$filteredClients = $clientsWithPay->getCollection()->filter(function ($client) {
     return $client->shifts_count > 0;
 });
+$clientsWithPay = new \Illuminate\Pagination\LengthAwarePaginator(
+    $filteredClients->forPage($clientsWithPay->currentPage(), $clientsWithPay->perPage()),
+    $filteredClients->count(),
+    $clientsWithPay->perPage(),
+    $clientsWithPay->currentPage(),
+    ['path' => $clientsWithPay->path(), 'pageName' => $clientsWithPay->getPageName()]
+);
 
         // For payroll reports, keep original pagination of PayrollReport model
         $payrollReportsQuery = \App\Models\PayrollReport::with(['employee', 'generator']);

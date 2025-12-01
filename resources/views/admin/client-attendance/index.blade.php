@@ -410,9 +410,9 @@
     <div class="page-header-content">
         <div class="page-title">
             <i class="fas fa-calendar-check"></i>
-            <h2>Attendance Management</h2>
+            <h2>Client Attendance Management</h2>
         </div>
-        {{-- <a href="{{ route('admin.attendance.create') }}" class="btn-add">
+        {{-- <a href="{{ route('admin.client-attendance.create') }}" class="btn-add">
             <i class="fas fa-plus"></i>
             <span>Add Manual Entry</span>
         </a> --}}
@@ -420,7 +420,7 @@
 </div>
 
 <!-- Employee Filter -->
-<form method="GET" action="{{ route('admin.attendance.index') }}" class="employee-filter"
+<form method="GET" action="{{ route('admin.client-attendance.index') }}" class="employee-filter"
     style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
 
     <div style="position: relative; width: 320px;">
@@ -468,7 +468,7 @@
     </button>
 
     @if (request()->hasAny(['employee_id', 'month', 'start_date', 'end_date']))
-        <a href="{{ route('admin.attendance.index') }}" class="btn btn-secondary"
+        <a href="{{ route('admin.client-attendance.index') }}" class="btn btn-secondary"
             style="background: #6b7280; color: white; border-color: #6b7280; padding: 0.65rem 1rem; border-radius: 0.5rem; font-size: 0.9rem;">
             Clear Filter
         </a>
@@ -548,10 +548,10 @@
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <a href="{{ route('admin.attendance.show', $log) }}" class="btn-action btn-action-view" title="View">
+                                <a href="{{ route('admin.client-attendance.show', $log) }}" class="btn-action btn-action-view" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.attendance.edit', $log) }}" class="btn-action btn-action-edit" title="Edit">
+                                <a href="{{ route('admin.client-attendance.edit', $log) }}" class="btn-action btn-action-edit" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <button type="button" class="btn-action btn-action-delete" onclick="deleteAttendance({{ $log->id }}, '{{ $log->employee ? $log->employee->name : 'Unknown Employee' }} - {{ $log->attendance_date->format('M d, Y') }}')" title="Delete">

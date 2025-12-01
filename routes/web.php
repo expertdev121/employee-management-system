@@ -78,7 +78,25 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/shifts/{shift}/assign', [AdminController::class, 'assignEmployeeToShift'])->name('admin.shifts.assign');
     Route::post('/admin/shifts/{employeeShift}/unassign', [AdminController::class, 'unassignEmployeeFromShift'])->name('admin.shifts.unassign');
 
-    // Attendance CRUD
+    // Employee Attendance CRUD
+    Route::get('/admin/employee-attendance', [AdminController::class, 'employeeAttendance'])->name('admin.employee-attendance.index');
+    Route::get('/admin/employee-attendance/create', [AdminController::class, 'createEmployeeAttendance'])->name('admin.employee-attendance.create');
+    Route::post('/admin/employee-attendance', [AdminController::class, 'storeEmployeeAttendance'])->name('admin.employee-attendance.store');
+    Route::get('/admin/employee-attendance/{attendanceLog}', [AdminController::class, 'showEmployeeAttendance'])->name('admin.employee-attendance.show');
+    Route::get('/admin/employee-attendance/{attendanceLog}/edit', [AdminController::class, 'editEmployeeAttendance'])->name('admin.employee-attendance.edit');
+    Route::put('/admin/employee-attendance/{attendanceLog}', [AdminController::class, 'updateEmployeeAttendance'])->name('admin.employee-attendance.update');
+    Route::delete('/admin/employee-attendance/{attendanceLog}', [AdminController::class, 'destroyEmployeeAttendance'])->name('admin.employee-attendance.destroy');
+
+    // Client Attendance CRUD
+    Route::get('/admin/client-attendance', [AdminController::class, 'clientAttendance'])->name('admin.client-attendance.index');
+    Route::get('/admin/client-attendance/create', [AdminController::class, 'createClientAttendance'])->name('admin.client-attendance.create');
+    Route::post('/admin/client-attendance', [AdminController::class, 'storeClientAttendance'])->name('admin.client-attendance.store');
+    Route::get('/admin/client-attendance/{attendanceLog}', [AdminController::class, 'showClientAttendance'])->name('admin.client-attendance.show');
+    Route::get('/admin/client-attendance/{attendanceLog}/edit', [AdminController::class, 'editClientAttendance'])->name('admin.client-attendance.edit');
+    Route::put('/admin/client-attendance/{attendanceLog}', [AdminController::class, 'updateClientAttendance'])->name('admin.client-attendance.update');
+    Route::delete('/admin/client-attendance/{attendanceLog}', [AdminController::class, 'destroyClientAttendance'])->name('admin.client-attendance.destroy');
+
+    // Legacy Attendance CRUD (redirect to employee attendance)
     Route::get('/admin/attendance', [AdminController::class, 'attendance'])->name('admin.attendance.index');
     Route::get('/admin/attendance/create', [AdminController::class, 'createAttendance'])->name('admin.attendance.create');
     Route::post('/admin/attendance', [AdminController::class, 'storeAttendance'])->name('admin.attendance.store');
