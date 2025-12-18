@@ -173,6 +173,8 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
+            'social_id' => 'nullable|string|max:255',
+            'full_address' => 'nullable|string',
             // Removed role from validation because employees form no longer has role field
         ]);
 
@@ -183,6 +185,8 @@ class AdminController extends Controller
             'phone' => $request->phone,
             'department' => $request->department,
             'hourly_rate' => $request->hourly_rate,
+            'social_id' => $request->social_id,
+            'full_address' => $request->full_address,
             // Role fixed to 'employee' explicitly
             'role' => 'employee',
             'max_shifts_per_week' => null,
@@ -210,12 +214,14 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
+            'social_id' => 'nullable|string|max:255',
+            'full_address' => 'nullable|string',
             // Role removed from required validation because employees form does not submit it
             'status' => 'required|in:active,inactive,blocked',
         ]);
 
         // Set role to employee explicitly to avoid missing role from form
-        $data = $request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'status']);
+        $data = $request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'social_id', 'full_address', 'status']);
         $data['role'] = 'employee';
 
         $employee->update($data);
@@ -285,10 +291,13 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
+            'full_address' => 'nullable|string',
+            'floor' => 'nullable|string|max:255',
+            'business_name' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,blocked',
         ]);
 
-        $client->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'status']));
+        $client->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'full_address', 'floor', 'business_name', 'status']));
 
         return redirect()->route('admin.clients.index')->with('success', 'Client updated successfully.');
     }
@@ -585,7 +594,7 @@ class AdminController extends Controller
         // Get employees for filter dropdown
         $employees = User::where('role', 'employee')->get();
 
-        $month = $request->get('month', date('Y-m'));
+        $month = $request->get('month');
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
         $employeeId = $request->get('employee_id');
@@ -704,7 +713,7 @@ class AdminController extends Controller
         // Get clients for filter dropdown
         $employees = User::where('role', 'client')->get();
 
-        $month = $request->get('month', date('Y-m'));
+        $month = $request->get('month');
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
         $employeeId = $request->get('employee_id');

@@ -30,6 +30,10 @@ class User extends Authenticatable
         'hourly_rate',
         'max_shifts_per_week',
         'max_shifts_per_day',
+        'social_id',
+        'full_address',
+        'floor',
+        'business_name',
     ];
 
     /**

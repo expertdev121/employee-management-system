@@ -472,6 +472,53 @@
 
 
             <div class="form-row">
+                <!-- Business Name -->
+                <div class="form-group">
+                    <label for="business_name" class="form-label">Business Name</label>
+                    <input type="text"
+                           id="business_name"
+                           name="business_name"
+                           value="{{ old('business_name', $client->business_name ?? '') }}"
+                           class="form-input @error('business_name') is-invalid @enderror"
+                           placeholder="Enter business name">
+                    @error('business_name')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+
+
+                <!-- Floor -->
+                <div class="form-group">
+                    <label for="floor" class="form-label">Floor</label>
+                    <input type="text"
+                           id="floor"
+                           name="floor"
+                           value="{{ old('floor', $client->floor ?? '') }}"
+                           class="form-input @error('floor') is-invalid @enderror"
+                           placeholder="Enter floor">
+                    @error('floor')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+
+            <div class="form-row">
+                <!-- Full Address -->
+                <div class="form-group full-width">
+                    <label for="full_address" class="form-label">Full Address</label>
+                    <textarea id="full_address"
+                              name="full_address"
+                              class="form-textarea @error('full_address') is-invalid @enderror"
+                              placeholder="Enter full address">{{ old('full_address', $client->full_address ?? '') }}</textarea>
+                    @error('full_address')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+
+            <div class="form-row">
                 <!-- Hourly Rate -->
                 <div class="form-group">
                     <label for="hourly_rate" class="form-label">
