@@ -84,17 +84,9 @@ class EmployeeController extends Controller
             ->orderBy('shift_date', 'desc')
             ->paginate(15);
 
-        // Add can_accept flag to each shift - only for today's shifts
+        // Add can_accept flag to each shift - always show done button
         foreach ($shifts as $shift) {
-            $shift->can_accept = false;
-
-            if (is_null($shift->shift_date)) {
-                // Recurring shift: only if not already accepted today
-                $shift->can_accept = !($shift->responded_at && $shift->responded_at->toDateString() === $currentDate);
-            } else {
-                // Dated shift: only if today and status allows
-                $shift->can_accept = ($shift->shift_date->toDateString() === $currentDate) && in_array($shift->status, ['pending', 'assigned']);
-            }
+            $shift->can_accept = true;
         }
 
         return view('employee.shifts.index', compact('shifts'));
