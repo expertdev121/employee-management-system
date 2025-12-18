@@ -1,24 +1,13 @@
-# Client Table Separation Tasks
+# Employee Shifts Display Update
 
-## Database Changes
-- [x] Update clients migration to include all form fields except password
-- [x] Create client_shifts migration for shift assignments (no status field)
-- [x] Run migrations
+## Completed Tasks
+- [x] Modified EmployeeController shifts() method to filter shifts
+  - Show only upcoming and today's shifts
+  - Hide past shifts
+  - For recurring shifts, show only if shift_type matches current day
+- [x] Updated can_accept logic to only allow acceptance for today's shifts
 
-## Model Updates
-- [x] Update Client model to use clients table and add relationships
-- [x] Create ClientShift model
-
-## Controller Updates
-- [x] Update AdminController client methods to use Client model instead of User
-
-## View Updates
-- [x] Update client form view to remove password fields for clients
-- [x] Update client views (index, show) to work with Client model
-
-## Route Updates
-- [ ] Update routes if needed
-
-## Testing
-- [ ] Test client CRUD operations
-- [ ] Update any related functionality
+## Pending Tasks
+- [x] Test the changes to ensure past shifts are hidden
+- [x] Verify done button appears only for today's shifts
+- [x] Check recurring shifts display correctly for current day

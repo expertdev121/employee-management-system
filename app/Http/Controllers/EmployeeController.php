@@ -73,23 +73,27 @@ class EmployeeController extends Controller
     public function shifts()
     {
         $user = Auth::user();
+        $currentDate = now()->toDateString();
+        $currentDay = now()->format('l'); // e.g., "Monday"
+
         $shifts = EmployeeShift::where('employee_id', $user->id)
-            ->where('status', '!=', 'unassigned')
+            ->whereHas('shift', function ($query) use ($currentDay) {
+                $query->where('shift_name', 'like', $currentDay . '%');
+            })
             ->with('shift')
             ->orderBy('shift_date', 'desc')
             ->paginate(15);
 
-        // Add can_accept flag to each shift
-        $currentDate = now()->toDateString();
+        // Add can_accept flag to each shift - only for today's shifts
         foreach ($shifts as $shift) {
             $shift->can_accept = false;
 
             if (is_null($shift->shift_date)) {
-                // Recurring shift: check if already accepted today
+                // Recurring shift: only if not already accepted today
                 $shift->can_accept = !($shift->responded_at && $shift->responded_at->toDateString() === $currentDate);
             } else {
-                // Dated shift: check their own status
-                $shift->can_accept = in_array($shift->status, ['pending', 'assigned']);
+                // Dated shift: only if today and status allows
+                $shift->can_accept = ($shift->shift_date->toDateString() === $currentDate) && in_array($shift->status, ['pending', 'assigned']);
             }
         }
 

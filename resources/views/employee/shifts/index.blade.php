@@ -384,7 +384,6 @@
                         <th>Date</th>
                         <th>Time</th>
                         <th>Location</th>
-                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -426,11 +425,6 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge-custom badge-{{ $shift->status === 'accepted' ? 'success' : (in_array($shift->status, ['pending', 'assigned']) ? 'warning' : 'danger') }}">
-                                {{ ucfirst($shift->status) }}
-                            </span>
-                        </td>
-                        <td>
                             @if(in_array($shift->status, ['pending', 'assigned']) && $shift->can_accept)
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <button class="btn-action btn-action-primary accept-shift" data-shift-id="{{ $shift->id }}">
@@ -469,7 +463,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="5">
                             <div class="empty-state">
                                 <div class="empty-state-icon">📅</div>
                                 <div class="empty-state-text">No shifts assigned</div>

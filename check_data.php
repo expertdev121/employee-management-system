@@ -6,69 +6,42 @@ $app = require_once 'bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\User;
-use App\Models\AttendanceLog;
-use App\Models\EmployeePayroll;
+use App\Models\EmployeeShift;
+use App\Models\Shift;
 
-echo "=== EMPLOYEE DATA FOR PAYROLL AND ATTENDANCE ===\n\n";
+echo "=== EMPLOYEE SHIFT DATA FOR EMPLOYEE ID 2 ===\n";
 
-$employees = User::where('role', 'employee')->get();
+$employeeShifts = EmployeeShift::where('employee_id', 2)->with('shift')->get();
 
-foreach ($employees as $employee) {
-    echo "Employee: {$employee->name} ({$employee->email})\n";
-    echo "  Department: {$employee->department}\n";
-    echo "  Hourly Rate: \${$employee->hourly_rate}\n";
+if ($employeeShifts->isEmpty()) {
+    echo "No shifts found for employee ID 2\n";
+} else {
+    foreach ($employeeShifts as $employeeShift) {
+        echo "Employee Shift ID: {$employeeShift->id}\n";
+        echo "  Shift ID: {$employeeShift->shift_id}\n";
+        echo "  Shift Date: " . ($employeeShift->shift_date ? $employeeShift->shift_date->format('Y-m-d') : 'Recurring') . "\n";
+        echo "  Status: {$employeeShift->status}\n";
+        echo "  Responded At: " . ($employeeShift->responded_at ? $employeeShift->responded_at->format('Y-m-d H:i:s') : 'Not responded') . "\n";
 
-    $attendanceCount = AttendanceLog::where('employee_id', $employee->id)->count();
-    $payrollCount = EmployeePayroll::where('employee_id', $employee->id)->count();
-
-    echo "  Attendance Logs: {$attendanceCount}\n";
-    echo "  Payroll Records: {$payrollCount}\n";
-
-    // Show sample attendance and payroll data
-    $sampleAttendance = AttendanceLog::where('employee_id', $employee->id)->first();
-    if ($sampleAttendance) {
-        echo "  Sample Attendance: {$sampleAttendance->attendance_date} - {$sampleAttendance->total_hours} hours\n";
+        if ($employeeShift->shift) {
+            echo "  Shift Name: {$employeeShift->shift->shift_name}\n";
+            echo "  Shift Type: {$employeeShift->shift->shift_type}\n";
+            echo "  Start Time: {$employeeShift->shift->start_time}\n";
+            echo "  End Time: {$employeeShift->shift->end_time}\n";
+        }
+        echo "\n";
     }
-
-    $samplePayroll = EmployeePayroll::where('employee_id', $employee->id)->first();
-    if ($samplePayroll) {
-        echo "  Sample Payroll: {$samplePayroll->shift_date} - \${$samplePayroll->total_pay} for {$samplePayroll->total_hours} hours\n";
-    }
-
-    echo "\n";
 }
 
-echo "=== CLIENT DATA FOR PAYROLL AND ATTENDANCE ===\n\n";
+echo "=== ALL SHIFTS ===\n";
 
-$clients = User::where('role', 'client')->get();
+$shifts = Shift::all();
 
-foreach ($clients as $client) {
-    echo "Client: {$client->name} ({$client->email})\n";
-    echo "  Department: {$client->department}\n";
-    echo "  Hourly Rate: \${$client->hourly_rate}\n";
-
-    $attendanceCount = AttendanceLog::where('employee_id', $client->id)->count();
-    $payrollCount = EmployeePayroll::where('employee_id', $client->id)->count();
-
-    echo "  Attendance Logs: {$attendanceCount}\n";
-    echo "  Payroll Records: {$payrollCount}\n";
-
-    // Show sample attendance and payroll data
-    $sampleAttendance = AttendanceLog::where('employee_id', $client->id)->first();
-    if ($sampleAttendance) {
-        echo "  Sample Attendance: {$sampleAttendance->attendance_date} - {$sampleAttendance->total_hours} hours\n";
-    }
-
-    $samplePayroll = EmployeePayroll::where('employee_id', $client->id)->first();
-    if ($samplePayroll) {
-        echo "  Sample Payroll: {$samplePayroll->shift_date} - \${$samplePayroll->total_pay} for {$samplePayroll->total_hours} hours\n";
-    }
-
-    echo "\n";
+foreach ($shifts as $shift) {
+    echo "Shift ID: {$shift->id}\n";
+    echo "  Shift Name: {$shift->shift_name}\n";
+    echo "  Shift Type: {$shift->shift_type}\n";
+    echo "  Start Time: {$shift->start_time}\n";
+    echo "  End Time: {$shift->end_time}\n";
+    echo "  Status: {$shift->status}\n\n";
 }
-
-echo "=== SUMMARY ===\n";
-echo "Total Employees: " . $employees->count() . "\n";
-echo "Total Clients: " . $clients->count() . "\n";
-echo "Total Attendance Logs: " . AttendanceLog::count() . "\n";
-echo "Total Payroll Records: " . EmployeePayroll::count() . "\n";
