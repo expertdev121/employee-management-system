@@ -4,12 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Client extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'clients';
 
     /**
      * The attributes that are mass assignable.
@@ -27,6 +34,7 @@ class Client extends Model
         'full_address',
         'floor',
         'business_name',
+        'status',
     ];
 
     /**
@@ -39,11 +47,11 @@ class Client extends Model
     ];
 
     /**
-     * Get the shifts assigned to this client.
+     * Get the client shifts assigned to this client.
      */
-    public function employeeShifts(): MorphMany
+    public function clientShifts(): HasMany
     {
-        return $this->morphMany(EmployeeShift::class, 'employee');
+        return $this->hasMany(ClientShift::class);
     }
 
     /**

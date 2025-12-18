@@ -1,4 +1,4 @@
-@extends('layouts.app')
+    @extends('layouts.app')
 
 @section('content')
 <style>
@@ -379,12 +379,7 @@
                             </span>
                         </span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Role:</span>
-                        <span class="info-value">
-                            <span class="badge-custom badge-primary">{{ ucfirst($client->role) }}</span>
-                        </span>
-                    </div>
+
                     <div class="info-item">
                         <span class="info-label">Joined:</span>
                         <span class="info-value">
@@ -401,8 +396,17 @@
                         <i class="fas fa-clock"></i>
                         Assigned Shifts
                     </h4>
-                    @if($client->employeeShifts->count() > 0)
-                        @foreach($client->employeeShifts as $shift)
+
+                    <!-- Assign Shift Form -->
+                    <div class="mb-4">
+                        <button type="button" class="btn-custom btn-primary-custom" data-bs-toggle="modal" data-bs-target="#assignShiftModal">
+                            <i class="fas fa-plus"></i>
+                            <span>Assign New Shift</span>
+                        </button>
+                    </div>
+
+                    @if($client->clientShifts->count() > 0)
+                        @foreach($client->clientShifts as $shift)
                             <div class="shift-card">
                                 <div class="shift-card-item">
                                     <span class="shift-card-label">Shift:</span>
@@ -416,16 +420,9 @@
                                 </div>
                                 <div class="shift-card-item">
                                     <span class="shift-card-label">Time:</span>
-                                    <span class="shift-card-value">{{ $shift->shift->start_time }} - {{ $shift->shift->end_time }}</span>
+                                    <span class="shift-card-value">{{ $shift->shift->start_time->format('H:i') }} - {{ $shift->shift->end_time->format('H:i') }}</span>
                                 </div>
-                                <div class="shift-card-item">
-                                    <span class="shift-card-label">Status:</span>
-                                    <span class="shift-card-value">
-                                        <span class="badge-custom badge-{{ $shift->status === 'assigned' ? 'success' : ($shift->status === 'pending' ? 'warning' : 'danger') }}">
-                                            {{ ucfirst($shift->status) }}
-                                        </span>
-                                    </span>
-                                </div>
+
                                 @if($shift->shift_date)
                                     <div class="shift-card-item">
                                         <span class="shift-card-label">Assigned Date:</span>
@@ -434,6 +431,20 @@
                                         @else
                                             <span class="shift-card-value">Recurring</span>
                                         @endif
+                                    </div>
+                                @endif
+                                @if(in_array($shift->status, ['assigned', 'accepted']))
+                                    <div class="shift-card-item">
+                                        <span class="shift-card-label">Actions:</span>
+                                        <span class="shift-card-value">
+                                            <form action="{{ route('admin.clients.unassign-shift', $shift) }}" method="POST" style="display: inline;">
+                                                @csrf
+                                                @method('POST')
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to unassign this shift?')">
+                                                    <i class="fas fa-times"></i> Unassign
+                                                </button>
+                                            </form>
+                                        </span>
                                     </div>
                                 @endif
                             </div>
@@ -446,51 +457,50 @@
                     @endif
                 </div>
 
-                <div class="info-section">
-                    <h4 class="section-title">
-                        <i class="fas fa-calendar-check"></i>
-                        Recent Attendance
-                    </h4>
-                    @php
-                        $recentAttendance = $client->attendanceLogs()->latest()->take(5)->get();
-                    @endphp
-                    @if($recentAttendance->count() > 0)
-                        @foreach($recentAttendance as $attendance)
-                            <div class="attendance-card">
-                                <div class="attendance-card-item">
-                                    <span class="attendance-card-label">Date:</span>
-                                    <span class="attendance-card-value">{{ $attendance->attendance_date->format('M d, Y') }}</span>
-                                </div>
-                                <div class="attendance-card-item">
-                                    <span class="attendance-card-label">Status:</span>
-                                    <span class="attendance-card-value">
-                                        <span class="badge-custom badge-{{ $attendance->status === 'present' ? 'success' : ($attendance->status === 'absent' ? 'danger' : 'warning') }}">
-                                            {{ ucfirst($attendance->status) }}
-                                        </span>
-                                    </span>
-                                </div>
-                                @if($attendance->login_time)
-                                    <div class="attendance-card-item">
-                                        <span class="attendance-card-label">Login:</span>
-                                        <span class="attendance-card-value">{{ $attendance->login_time->format('H:i') }}</span>
-                                    </div>
-                                @endif
-                                @if($attendance->logout_time)
-                                    <div class="attendance-card-item">
-                                        <span class="attendance-card-label">Logout:</span>
-                                        <span class="attendance-card-value">{{ $attendance->logout_time->format('H:i') }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    @else
-                        <div class="empty-state">
-                            <i class="fas fa-calendar-times"></i>
-                            <p>No attendance records</p>
-                        </div>
-                    @endif
-                </div>
+
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Shift Modal -->
+<div class="modal fade" id="assignShiftModal" tabindex="-1" role="dialog" aria-labelledby="assignShiftModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignShiftModalLabel">
+                    <i class="fas fa-plus-circle"></i>
+                    Assign Shift to Client
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.clients.assign-shift', $client) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="shift_id">Select Shift</label>
+                        <select name="shift_id" id="shift_id" class="form-control" required>
+                            <option value="">Choose a shift...</option>
+                            @foreach(\App\Models\Shift::all() as $shift)
+                                <option value="{{ $shift->id }}">
+                                    {{ $shift->shift_name }} ({{ $shift->start_time->format('H:i') }} - {{ $shift->end_time->format('H:i') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes (Optional)</label>
+                        <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Any additional notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Assign Shift
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

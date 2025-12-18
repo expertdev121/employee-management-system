@@ -11,6 +11,7 @@ class AttendanceLog extends Model
 
     protected $fillable = [
         'employee_id',
+        'employee_type',
         'shift_id',
         'attendance_date',
         'login_time',

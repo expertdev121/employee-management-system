@@ -484,13 +484,13 @@
                                         <span class="menu-text">Employee Attendance</span>
                                     </a>
                                 </li>
-                                <li class="menu-item">
+                                {{-- <li class="menu-item">
                                     <a class="menu-link {{ request()->routeIs('admin.client-attendance*') ? 'active' : '' }}"
                                         href="{{ route('admin.client-attendance.index') }}">
                                         <span class="menu-icon"><i class="fas fa-calendar-check"></i></span>
                                         <span class="menu-text">Client Attendance</span>
                                     </a>
-                                </li>
+                                </li> --}}
                                 <li class="menu-item">
                                     <a class="menu-link {{ request()->routeIs('admin.payroll*') ? 'active' : '' }}"
                                         href="{{ route('admin.payroll.index') }}">

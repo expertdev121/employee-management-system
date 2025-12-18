@@ -404,39 +404,7 @@
             </div>
 
 
-            @if(!isset($client))
-            <div class="form-row">
-                <!-- Password -->
-                <div class="form-group">
-                    <label for="password" class="form-label">
-                        Password <span class="required">*</span>
-                    </label>
-                    <input type="password"
-                           id="password"
-                           name="password"
-                           class="form-input @error('password') is-invalid @enderror"
-                           placeholder="Enter password"
-                           required>
-                    @error('password')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
 
-
-                <!-- Confirm Password -->
-                <div class="form-group">
-                    <label for="password_confirmation" class="form-label">
-                        Confirm Password <span class="required">*</span>
-                    </label>
-                    <input type="password"
-                           id="password_confirmation"
-                           name="password_confirmation"
-                           class="form-input"
-                           placeholder="Confirm password"
-                           required>
-                </div>
-            </div>
-            @endif
 
 
             <div class="form-row">

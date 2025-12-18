@@ -66,6 +66,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/clients/{client}/edit', [AdminController::class, 'editClient'])->name('admin.clients.edit');
     Route::put('/admin/clients/{client}', [AdminController::class, 'updateClient'])->name('admin.clients.update');
     Route::delete('/admin/clients/{client}', [AdminController::class, 'destroyClient'])->name('admin.clients.destroy');
+    Route::post('/admin/clients/{client}/assign-shift', [AdminController::class, 'assignClientToShift'])->name('admin.clients.assign-shift');
+    Route::post('/admin/clients/shifts/{clientShift}/unassign', [AdminController::class, 'unassignClientFromShift'])->name('admin.clients.unassign-shift');
 
     // Shifts CRUD
     Route::get('/admin/shifts', [AdminController::class, 'shifts'])->name('admin.shifts.index');

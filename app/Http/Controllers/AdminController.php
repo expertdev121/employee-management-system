@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Client;
 use App\Models\Shift;
 use App\Models\EmployeeShift;
+use App\Models\ClientShift;
 use App\Models\AttendanceLog;
 use App\Models\PayrollReport;
 use Illuminate\Http\Request;
@@ -239,7 +241,7 @@ class AdminController extends Controller
     // Clients CRUD
     public function clients()
     {
-        $clients = User::clients()->with('employeeShifts.shift')->paginate(15);
+        $clients = Client::with('clientShifts.shift')->paginate(15);
         return view('admin.clients.index', compact('clients'));
     }
 
@@ -252,57 +254,64 @@ class AdminController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'email' => 'required|string|email|max:255|unique:clients',
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
+            'social_id' => 'nullable|string|max:255',
+            'full_address' => 'nullable|string',
+            'floor' => 'nullable|string|max:255',
+            'business_name' => 'nullable|string|max:255',
         ]);
 
-        User::create([
+        Client::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
             'phone' => $request->phone,
             'department' => $request->department,
             'hourly_rate' => $request->hourly_rate,
-            'role' => 'client',
-            'max_shifts_per_week' => 4,
+            'max_shifts_per_week' => 6,
+            'social_id' => $request->social_id,
+            'full_address' => $request->full_address,
+            'floor' => $request->floor,
+            'business_name' => $request->business_name,
+            'status' => 'active',
         ]);
 
         return redirect()->route('admin.clients.index')->with('success', 'Client created successfully.');
     }
 
-    public function showClient(User $client)
+    public function showClient(Client $client)
     {
         return view('admin.clients.show', compact('client'));
     }
 
-    public function editClient(User $client)
+    public function editClient(Client $client)
     {
         return view('admin.clients.form', compact('client'));
     }
 
-    public function updateClient(Request $request, User $client)
+    public function updateClient(Request $request, Client $client)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $client->id,
+            'email' => 'required|string|email|max:255|unique:clients,email,' . $client->id,
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'hourly_rate' => 'required|numeric|min:0',
+            'social_id' => 'nullable|string|max:255',
             'full_address' => 'nullable|string',
             'floor' => 'nullable|string|max:255',
             'business_name' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,blocked',
         ]);
 
-        $client->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'full_address', 'floor', 'business_name', 'status']));
+        $client->update($request->only(['name', 'email', 'phone', 'department', 'hourly_rate', 'social_id', 'full_address', 'floor', 'business_name', 'status']));
 
         return redirect()->route('admin.clients.index')->with('success', 'Client updated successfully.');
     }
 
-    public function destroyClient(User $client)
+    public function destroyClient(Client $client)
     {
         // Force delete to trigger cascade deletion of related records
         $client->forceDelete();
@@ -435,6 +444,72 @@ class AdminController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Employee unassigned from shift successfully.');
+    }
+
+    public function assignClientToShift(Request $request, Client $client)
+    {
+        $request->validate([
+            'shift_id' => 'required|exists:shifts,id',
+            'shift_date' => 'nullable|date',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Check if client is already assigned to this shift on the same date (if date is provided)
+        if ($request->shift_date) {
+            $existingAssignment = ClientShift::where('client_id', $client->id)
+                ->where('shift_id', $request->shift_id)
+                ->where('shift_date', $request->shift_date)
+                ->first();
+
+            if ($existingAssignment) {
+                return redirect()->back()->with('error', 'Client is already assigned to this shift on the selected date.');
+            }
+
+            // Check if shift is at full capacity for the specific date
+            $currentAssignments = ClientShift::where('shift_id', $request->shift_id)
+                ->where('shift_date', $request->shift_date)
+                ->where('status', 'assigned')
+                ->count();
+
+            $shift = Shift::find($request->shift_id);
+            if ($currentAssignments >= $shift->max_capacity) {
+                return redirect()->back()->with('error', 'Shift is at full capacity for the selected date. Cannot assign more clients.');
+            }
+        } else {
+            // For recurring shifts without date, check if client is already assigned to this shift
+            $existingAssignment = ClientShift::where('client_id', $client->id)
+                ->where('shift_id', $request->shift_id)
+                ->whereNull('shift_date')
+                ->first();
+
+            if ($existingAssignment) {
+                return redirect()->back()->with('error', 'Client is already assigned to this recurring shift.');
+            }
+        }
+
+        ClientShift::create([
+            'client_id' => $client->id,
+            'shift_id' => $request->shift_id,
+            'shift_date' => $request->shift_date,
+            'status' => 'assigned',
+            'notes' => $request->notes,
+        ]);
+
+        return redirect()->back()->with('success', 'Client assigned to shift successfully.');
+    }
+
+    public function unassignClientFromShift(ClientShift $clientShift)
+    {
+        if (!in_array($clientShift->status, ['assigned', 'accepted'])) {
+            return redirect()->back()->with('error', 'Only assigned or accepted shifts can be unassigned.');
+        }
+
+        $clientShift->update([
+            'status' => 'unassigned',
+            'responded_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Client unassigned from shift successfully.');
     }
 
     // Attendance CRUD
