@@ -84,9 +84,14 @@ class EmployeeController extends Controller
             ->orderBy('shift_date', 'desc')
             ->paginate(15);
 
-        // Add can_accept flag to each shift - always show done button
+        // Add can_accept flag to each shift - only for accepted shifts (filtered by current day)
         foreach ($shifts as $shift) {
-            $shift->can_accept = true;
+            $shift->can_accept = false;
+
+            // Only allow marking attendance for accepted shifts (already filtered by current day)
+            if ($shift->status === 'accepted') {
+                $shift->can_accept = true;
+            }
         }
 
         return view('employee.shifts.index', compact('shifts'));

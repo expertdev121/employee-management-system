@@ -418,19 +418,15 @@
                             </div>
                             @elseif($shift->status === 'accepted')
                             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                <span class="badge-custom badge-success">Done</span>
-                                @if($shift->responded_at)
-                                <small style="color: #6b7280; font-size: 0.75rem;">
-                                    Response Date: {{ $shift->responded_at->format('M d, Y H:i') }}
-                                </small>
-                                @endif
                                 @if($shift->can_accept)
-                                <div style="margin-top: 0.5rem;">
+                                <div>
                                     <button class="btn-action btn-action-primary mark-attendance" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
                                         <i class="fas fa-check"></i>
                                         <span>Done Today</span>
                                     </button>
                                 </div>
+                                @else
+                                <span class="badge-custom badge-success">Done</span>
                                 @endif
                             </div>
                             @else
