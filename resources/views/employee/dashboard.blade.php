@@ -374,7 +374,7 @@
 <!-- Dashboard Content -->
 <div class="row">
     <!-- Today's Shifts -->
-    <div class="col-lg-6">
+    {{-- <div class="col-lg-6">
         <div class="dashboard-card">
             <div class="dashboard-card-header">
                 <h5>Today's Shifts</h5>
@@ -408,10 +408,10 @@
                 @endif
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Upcoming Shifts -->
-    <div class="col-lg-6">
+    {{-- <div class="col-lg-6">
         <div class="dashboard-card">
             <div class="dashboard-card-header">
                 <h5>Upcoming Shifts</h5>
@@ -444,7 +444,7 @@
                 @endif
             </div>
         </div>
-    </div>
+    </div> --}}
 </div>
 
 <!-- Recent Attendance -->
