@@ -338,6 +338,43 @@ class EmployeeController extends Controller
         return response()->json(['success' => 'Shift rejected successfully']);
     }
 
+    public function markAttendance(Request $request, EmployeeShift $employeeShift)
+    {
+        if ($employeeShift->employee_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $currentDate = now()->toDateString();
+
+        try {
+            return DB::transaction(function () use ($employeeShift, $currentDate) {
+                // Check if attendance already exists for today
+                $existingAttendance = AttendanceLog::where('employee_id', $employeeShift->employee_id)
+                    ->where('attendance_date', $currentDate)
+                    ->first();
+
+                if ($existingAttendance) {
+                    return response()->json(['error' => 'Attendance already marked for today'], 400);
+                }
+
+                // Create attendance record for this shift
+                $this->addShiftHoursToAttendance($employeeShift);
+
+                // Create payroll record
+                $this->createEmployeePayrollRecord($employeeShift);
+
+                return response()->json(['success' => 'Attendance marked successfully']);
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to mark attendance', [
+                'employee_shift_id' => $employeeShift->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['error' => 'Failed to mark attendance: ' . $e->getMessage()], 500);
+        }
+    }
+
 
 
     public function showShift(EmployeeShift $employeeShift)

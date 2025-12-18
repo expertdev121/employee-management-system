@@ -381,7 +381,6 @@
                 <thead>
                     <tr>
                         <th>Shift Name</th>
-                        <th>Date</th>
                         <th>Time</th>
                         <th>Location</th>
                         <th>Actions</th>
@@ -392,25 +391,6 @@
                     <tr>
                         <td>
                             <div class="shift-name">{{ $shift->shift->shift_name }}</div>
-                        </td>
-                        <td>
-                            <div class="shift-date">
-                                @if($shift->shift_date)
-                                    @if($shift->shift_date)
-                                        <span class="shift-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                    @else
-                                        <span class="shift-date-main">Recurring</span>
-                                    @endif
-                                    @if($shift->shift_date)
-                                        <span class="shift-date-day">{{ $shift->shift_date->format('l') }}</span>
-                                    @else
-                                        <span class="shift-date-day">Ongoing</span>
-                                    @endif
-                                @else
-                                    <span class="shift-date-main">Recurring</span>
-                                    <span class="shift-date-day">Ongoing</span>
-                                @endif
-                            </div>
                         </td>
                         <td>
                             <div class="shift-time">
@@ -446,7 +426,7 @@
                                 @endif
                                 @if($shift->can_accept)
                                 <div style="margin-top: 0.5rem;">
-                                    <button class="btn-action btn-action-primary accept-shift" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                    <button class="btn-action btn-action-primary mark-attendance" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
                                         <i class="fas fa-check"></i>
                                         <span>Done Today</span>
                                     </button>
@@ -463,7 +443,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5">
+                        <td colspan="4">
                             <div class="empty-state">
                                 <div class="empty-state-icon">📅</div>
                                 <div class="empty-state-text">No shifts assigned</div>
@@ -526,6 +506,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentShiftId = this.getAttribute('data-shift-id');
                 modal.style.display = 'block';
                 rejectionReason.focus();
+            }
+        });
+    });
+
+    // Mark attendance buttons
+    document.querySelectorAll('.mark-attendance').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.disabled) {
+                const shiftId = this.getAttribute('data-shift-id');
+                markAttendance(shiftId, this);
             }
         });
     });
@@ -631,6 +621,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 enableButton(button);
             });
             showMessage(data.success || 'Shift rejected successfully', 'success');
+        });
+    }
+
+    function markAttendance(shiftId, button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+
+        fetch(`/employee/shifts/${shiftId}/mark-attendance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                button.innerHTML = '<i class="fas fa-check"></i> Done!';
+                button.classList.remove('btn-action-primary');
+                button.classList.add('btn-action-success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-check"></i> Done Today';
+                showPopup(data.error || 'Failed to mark attendance');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check"></i> Done Today';
+            showPopup('An error occurred while marking attendance');
         });
     }
 
