@@ -411,10 +411,10 @@
                                     <i class="fas fa-check"></i>
                                     <span>Done</span>
                                 </button>
-                                <button class="btn-action btn-action-danger reject-shift" data-shift-id="{{ $shift->id }}">
+                                {{-- <button class="btn-action btn-action-danger reject-shift" data-shift-id="{{ $shift->id }}">
                                     <i class="fas fa-times"></i>
                                     <span>Not Done</span>
-                                </button>
+                                </button> --}}
                             </div>
                             @elseif($shift->status === 'accepted')
                             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
@@ -424,10 +424,10 @@
                                         <i class="fas fa-check"></i>
                                         <span>Done Today</span>
                                     </button>
-                                    <button class="btn-action btn-action-danger mark-not-done" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                    {{-- <button class="btn-action btn-action-danger mark-not-done" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
                                         <i class="fas fa-times"></i>
                                         <span>Not Done</span>
-                                    </button>
+                                    </button> --}}
                                 </div>
                                 @else
                                 <span class="badge-custom badge-success">Done</span>
