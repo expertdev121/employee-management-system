@@ -419,10 +419,14 @@
                             @elseif($shift->status === 'accepted')
                             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                                 @if($shift->can_accept)
-                                <div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                     <button class="btn-action btn-action-primary mark-attendance" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
                                         <i class="fas fa-check"></i>
                                         <span>Done Today</span>
+                                    </button>
+                                    <button class="btn-action btn-action-danger mark-not-done" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                        <i class="fas fa-times"></i>
+                                        <span>Not Done</span>
                                     </button>
                                 </div>
                                 @else
@@ -512,6 +516,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!this.disabled) {
                 const shiftId = this.getAttribute('data-shift-id');
                 markAttendance(shiftId, this);
+            }
+        });
+    });
+
+    // Mark not done buttons
+    document.querySelectorAll('.mark-not-done').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.disabled) {
+                const shiftId = this.getAttribute('data-shift-id');
+                markNotDone(shiftId, this);
             }
         });
     });
@@ -651,6 +665,40 @@ document.addEventListener('DOMContentLoaded', function() {
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-check"></i> Done Today';
             showPopup('An error occurred while marking attendance');
+        });
+    }
+
+    function markNotDone(shiftId, button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+
+        fetch(`/employee/shifts/${shiftId}/mark-not-done`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                button.innerHTML = '<i class="fas fa-times"></i> Not Done!';
+                button.classList.remove('btn-action-danger');
+                button.classList.add('btn-action-warning');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-times"></i> Not Done';
+                showPopup(data.error || 'Failed to mark as not done');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-times"></i> Not Done';
+            showPopup('An error occurred while marking as not done');
         });
     }
 
