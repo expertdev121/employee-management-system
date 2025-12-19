@@ -279,7 +279,7 @@
         style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
 
         <div style="position: relative; width: 320px;">
-            <input type="text" id="employeeSearch" name="employee_name" placeholder="🔍 Search employee or client name or email..."
+            <input type="text" id="employeeSearch" name="employee_name" placeholder="🔍 Search employee name or email..."
                 value="{{ isset($employeeId) && $employeeId ? ($employees->firstWhere('id', $employeeId)->name ?? $clients->firstWhere('id', $employeeId)->name ?? '') : '' }}"
                 style="width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db; font-size: 0.9rem;"
                 onkeyup="filterEmployees(this.value)">
@@ -439,7 +439,7 @@
     </div>
     @endif
 
-    @if (!$userType || $userType === 'client')
+    {{-- @if (!$userType || $userType === 'client')
     <!-- Client Payroll -->
     <div class="dashboard-card">
         <div class="dashboard-card-header">
@@ -507,7 +507,7 @@
             @endif
         </div>
     </div>
-    @endif
+    @endif --}}
 
     <!-- Payroll Reports Table -->
     @if ($payrollReports->count() > 0)
