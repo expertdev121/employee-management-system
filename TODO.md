@@ -1,13 +1,8 @@
-# Employee Shifts Display Update
+# TODO: Implement Cron Job for Missing Shifts
 
-## Completed Tasks
-- [x] Modified EmployeeController shifts() method to filter shifts
-  - Show only upcoming and today's shifts
-  - Hide past shifts
-  - For recurring shifts, show only if shift_type matches current day
-- [x] Updated can_accept logic to only allow acceptance for today's shifts
-
-## Pending Tasks
-- [x] Test the changes to ensure past shifts are hidden
-- [x] Verify done button appears only for today's shifts
-- [x] Check recurring shifts display correctly for current day
+## Steps to Complete
+- [x] Create the Artisan command `CheckMissingShifts` in `app/Console/Commands/CheckMissingShifts.php`
+- [x] Schedule the command in `app/Console/Kernel.php` to run periodically (e.g., hourly)
+- [x] Test the command manually
+- [x] Verify webhook sending and handle potential errors
+- [ ] Adjust scheduling frequency if needed
