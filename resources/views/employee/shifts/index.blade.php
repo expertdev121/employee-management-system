@@ -381,10 +381,8 @@
                 <thead>
                     <tr>
                         <th>Shift Name</th>
-                        <th>Date</th>
                         <th>Time</th>
                         <th>Location</th>
-                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -393,25 +391,6 @@
                     <tr>
                         <td>
                             <div class="shift-name">{{ $shift->shift->shift_name }}</div>
-                        </td>
-                        <td>
-                            <div class="shift-date">
-                                @if($shift->shift_date)
-                                    @if($shift->shift_date)
-                                        <span class="shift-date-main">{{ $shift->shift_date->format('M d, Y') }}</span>
-                                    @else
-                                        <span class="shift-date-main">Recurring</span>
-                                    @endif
-                                    @if($shift->shift_date)
-                                        <span class="shift-date-day">{{ $shift->shift_date->format('l') }}</span>
-                                    @else
-                                        <span class="shift-date-day">Ongoing</span>
-                                    @endif
-                                @else
-                                    <span class="shift-date-main">Recurring</span>
-                                    <span class="shift-date-day">Ongoing</span>
-                                @endif
-                            </div>
                         </td>
                         <td>
                             <div class="shift-time">
@@ -426,37 +405,32 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge-custom badge-{{ $shift->status === 'accepted' ? 'success' : (in_array($shift->status, ['pending', 'assigned']) ? 'warning' : 'danger') }}">
-                                {{ ucfirst($shift->status) }}
-                            </span>
-                        </td>
-                        <td>
                             @if(in_array($shift->status, ['pending', 'assigned']) && $shift->can_accept)
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <button class="btn-action btn-action-primary accept-shift" data-shift-id="{{ $shift->id }}">
                                     <i class="fas fa-check"></i>
                                     <span>Done</span>
                                 </button>
-                                <button class="btn-action btn-action-danger reject-shift" data-shift-id="{{ $shift->id }}">
+                                {{-- <button class="btn-action btn-action-danger reject-shift" data-shift-id="{{ $shift->id }}">
                                     <i class="fas fa-times"></i>
                                     <span>Not Done</span>
-                                </button>
+                                </button> --}}
                             </div>
                             @elseif($shift->status === 'accepted')
                             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                <span class="badge-custom badge-success">Done</span>
-                                @if($shift->responded_at)
-                                <small style="color: #6b7280; font-size: 0.75rem;">
-                                    Response Date: {{ $shift->responded_at->format('M d, Y H:i') }}
-                                </small>
-                                @endif
                                 @if($shift->can_accept)
-                                <div style="margin-top: 0.5rem;">
-                                    <button class="btn-action btn-action-primary accept-shift" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button class="btn-action btn-action-primary mark-attendance" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
                                         <i class="fas fa-check"></i>
                                         <span>Done Today</span>
                                     </button>
+                                    {{-- <button class="btn-action btn-action-danger mark-not-done" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                        <i class="fas fa-times"></i>
+                                        <span>Not Done</span>
+                                    </button> --}}
                                 </div>
+                                @else
+                                <span class="badge-custom badge-success">Done</span>
                                 @endif
                             </div>
                             @else
@@ -469,7 +443,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="4">
                             <div class="empty-state">
                                 <div class="empty-state-icon">📅</div>
                                 <div class="empty-state-text">No shifts assigned</div>
@@ -532,6 +506,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentShiftId = this.getAttribute('data-shift-id');
                 modal.style.display = 'block';
                 rejectionReason.focus();
+            }
+        });
+    });
+
+    // Mark attendance buttons
+    document.querySelectorAll('.mark-attendance').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.disabled) {
+                const shiftId = this.getAttribute('data-shift-id');
+                markAttendance(shiftId, this);
+            }
+        });
+    });
+
+    // Mark not done buttons
+    document.querySelectorAll('.mark-not-done').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.disabled) {
+                const shiftId = this.getAttribute('data-shift-id');
+                markNotDone(shiftId, this);
             }
         });
     });
@@ -637,6 +631,74 @@ document.addEventListener('DOMContentLoaded', function() {
                 enableButton(button);
             });
             showMessage(data.success || 'Shift rejected successfully', 'success');
+        });
+    }
+
+    function markAttendance(shiftId, button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+
+        fetch(`/employee/shifts/${shiftId}/mark-attendance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                button.innerHTML = '<i class="fas fa-check"></i> Done!';
+                button.classList.remove('btn-action-primary');
+                button.classList.add('btn-action-success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-check"></i> Done Today';
+                showPopup(data.error || 'Failed to mark attendance');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check"></i> Done Today';
+            showPopup('An error occurred while marking attendance');
+        });
+    }
+
+    function markNotDone(shiftId, button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+
+        fetch(`/employee/shifts/${shiftId}/mark-not-done`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                button.innerHTML = '<i class="fas fa-times"></i> Not Done!';
+                button.classList.remove('btn-action-danger');
+                button.classList.add('btn-action-warning');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-times"></i> Not Done';
+                showPopup(data.error || 'Failed to mark as not done');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-times"></i> Not Done';
+            showPopup('An error occurred while marking as not done');
         });
     }
 

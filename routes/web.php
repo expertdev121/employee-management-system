@@ -66,6 +66,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/clients/{client}/edit', [AdminController::class, 'editClient'])->name('admin.clients.edit');
     Route::put('/admin/clients/{client}', [AdminController::class, 'updateClient'])->name('admin.clients.update');
     Route::delete('/admin/clients/{client}', [AdminController::class, 'destroyClient'])->name('admin.clients.destroy');
+    Route::post('/admin/clients/{client}/assign-shift', [AdminController::class, 'assignClientToShift'])->name('admin.clients.assign-shift');
+    Route::post('/admin/clients/shifts/{clientShift}/unassign', [AdminController::class, 'unassignClientFromShift'])->name('admin.clients.unassign-shift');
 
     // Shifts CRUD
     Route::get('/admin/shifts', [AdminController::class, 'shifts'])->name('admin.shifts.index');
@@ -132,6 +134,7 @@ Route::middleware(['auth', 'role:employee'])->group(function () {
     Route::get('/employee/shifts/{employeeShift}', [EmployeeController::class, 'showShift'])->name('employee.shifts.show');
     Route::post('/employee/shifts/{employeeShift}/accept', [EmployeeController::class, 'acceptShift'])->name('employee.shifts.accept');
     Route::post('/employee/shifts/{employeeShift}/reject', [EmployeeController::class, 'rejectShift'])->name('employee.shifts.reject');
+    Route::post('/employee/shifts/{employeeShift}/mark-attendance', [EmployeeController::class, 'markAttendance'])->name('employee.shifts.mark-attendance');
     Route::get('/employee/attendance', [EmployeeController::class, 'attendance'])->name('employee.attendance.index');
     Route::get('/employee/payroll', [EmployeeController::class, 'payroll'])->name('employee.payroll.index');
     Route::get('/employee/requests', [EmployeeController::class, 'requests'])->name('employee.requests.index');

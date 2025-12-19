@@ -404,39 +404,7 @@
             </div>
 
 
-            @if(!isset($client))
-            <div class="form-row">
-                <!-- Password -->
-                <div class="form-group">
-                    <label for="password" class="form-label">
-                        Password <span class="required">*</span>
-                    </label>
-                    <input type="password"
-                           id="password"
-                           name="password"
-                           class="form-input @error('password') is-invalid @enderror"
-                           placeholder="Enter password"
-                           required>
-                    @error('password')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
 
-
-                <!-- Confirm Password -->
-                <div class="form-group">
-                    <label for="password_confirmation" class="form-label">
-                        Confirm Password <span class="required">*</span>
-                    </label>
-                    <input type="password"
-                           id="password_confirmation"
-                           name="password_confirmation"
-                           class="form-input"
-                           placeholder="Confirm password"
-                           required>
-                </div>
-            </div>
-            @endif
 
 
             <div class="form-row">
@@ -465,6 +433,53 @@
                            class="form-input @error('department') is-invalid @enderror"
                            placeholder="Enter department">
                     @error('department')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+
+            <div class="form-row">
+                <!-- Business Name -->
+                <div class="form-group">
+                    <label for="business_name" class="form-label">Business Name</label>
+                    <input type="text"
+                           id="business_name"
+                           name="business_name"
+                           value="{{ old('business_name', $client->business_name ?? '') }}"
+                           class="form-input @error('business_name') is-invalid @enderror"
+                           placeholder="Enter business name">
+                    @error('business_name')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+
+
+                <!-- Floor -->
+                <div class="form-group">
+                    <label for="floor" class="form-label">Floor</label>
+                    <input type="text"
+                           id="floor"
+                           name="floor"
+                           value="{{ old('floor', $client->floor ?? '') }}"
+                           class="form-input @error('floor') is-invalid @enderror"
+                           placeholder="Enter floor">
+                    @error('floor')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+
+            <div class="form-row">
+                <!-- Full Address -->
+                <div class="form-group full-width">
+                    <label for="full_address" class="form-label">Full Address</label>
+                    <textarea id="full_address"
+                              name="full_address"
+                              class="form-textarea @error('full_address') is-invalid @enderror"
+                              placeholder="Enter full address">{{ old('full_address', $client->full_address ?? '') }}</textarea>
+                    @error('full_address')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
                 </div>

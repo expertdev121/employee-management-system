@@ -1,8 +1,8 @@
-# Refactor Shift Acceptance Logic
+# TODO: Implement Cron Job for Missing Shifts
 
-## Tasks
-- [x] Modify acceptShift method in EmployeeController.php to create date-specific acceptance records
-- [x] Modify acceptShift method in ClientController.php to create date-specific acceptance records
-- [ ] Test daily shift acceptance functionality
-- [ ] Verify attendance and payroll creation for each acceptance
-- [ ] Check dashboard and shifts list display
+## Steps to Complete
+- [x] Create the Artisan command `CheckMissingShifts` in `app/Console/Commands/CheckMissingShifts.php`
+- [x] Schedule the command in `app/Console/Kernel.php` to run periodically (e.g., hourly)
+- [x] Test the command manually
+- [x] Verify webhook sending and handle potential errors
+- [ ] Adjust scheduling frequency if needed

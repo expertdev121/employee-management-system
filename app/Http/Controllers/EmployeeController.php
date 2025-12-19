@@ -73,23 +73,53 @@ class EmployeeController extends Controller
     public function shifts()
     {
         $user = Auth::user();
+        $currentDate = now()->toDateString();
+        $currentDayOfWeek = now()->dayOfWeek; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+        // Get current day + next 3 days (wrapping around week)
+        $daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $currentDayName = $daysOfWeek[$currentDayOfWeek];
+        $upcomingDays = [];
+        for ($i = 0; $i <= 3; $i++) {
+            $dayIndex = ($currentDayOfWeek + $i) % 7;
+            $upcomingDays[] = $daysOfWeek[$dayIndex];
+        }
+
         $shifts = EmployeeShift::where('employee_id', $user->id)
-            ->where('status', '!=', 'unassigned')
+            ->whereHas('shift', function ($query) use ($upcomingDays) {
+                $query->where(function ($shiftQuery) use ($upcomingDays) {
+                    foreach ($upcomingDays as $day) {
+                        $shiftQuery->orWhere('shift_name', 'like', $day . '%');
+                    }
+                });
+            })
             ->with('shift')
-            ->orderBy('shift_date', 'desc')
+            ->join('shifts', 'employee_shifts.shift_id', '=', 'shifts.id')
+            ->orderByRaw("
+                CASE
+                    " . implode(" ", array_map(function($day, $index) {
+                        return "WHEN shifts.shift_name LIKE '{$day}%' THEN {$index}";
+                    }, $upcomingDays, array_keys($upcomingDays))) . "
+                    ELSE 999
+                END
+            ")
+            ->orderBy('employee_shifts.shift_date', 'asc')
+            ->select('employee_shifts.*')
             ->paginate(15);
 
-        // Add can_accept flag to each shift
-        $currentDate = now()->toDateString();
+        // Add can_accept flag to each shift - only for accepted shifts on current day
         foreach ($shifts as $shift) {
             $shift->can_accept = false;
 
-            if (is_null($shift->shift_date)) {
-                // Recurring shift: check if already accepted today
-                $shift->can_accept = !($shift->responded_at && $shift->responded_at->toDateString() === $currentDate);
-            } else {
-                // Dated shift: check their own status
-                $shift->can_accept = in_array($shift->status, ['pending', 'assigned']);
+            // Only allow marking attendance for accepted shifts on current day
+            if ($shift->status === 'accepted') {
+                $shiftDayOfWeek = $shift->shift_date ? $shift->shift_date->dayOfWeek : null;
+                $shiftDayName = $shiftDayOfWeek !== null ? $daysOfWeek[$shiftDayOfWeek] : null;
+
+                // For recurring shifts or shifts on current day
+                if (!$shift->shift_date || $shiftDayName === $currentDayName) {
+                    $shift->can_accept = true;
+                }
             }
         }
 
@@ -340,6 +370,43 @@ class EmployeeController extends Controller
         ]);
 
         return response()->json(['success' => 'Shift rejected successfully']);
+    }
+
+    public function markAttendance(Request $request, EmployeeShift $employeeShift)
+    {
+        if ($employeeShift->employee_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $currentDate = now()->toDateString();
+
+        try {
+            return DB::transaction(function () use ($employeeShift, $currentDate) {
+                // Check if attendance already exists for today
+                $existingAttendance = AttendanceLog::where('employee_id', $employeeShift->employee_id)
+                    ->where('attendance_date', $currentDate)
+                    ->first();
+
+                if ($existingAttendance) {
+                    return response()->json(['error' => 'Attendance already marked for today'], 400);
+                }
+
+                // Create attendance record for this shift
+                $this->addShiftHoursToAttendance($employeeShift);
+
+                // Create payroll record
+                $this->createEmployeePayrollRecord($employeeShift);
+
+                return response()->json(['success' => 'Attendance marked successfully']);
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to mark attendance', [
+                'employee_shift_id' => $employeeShift->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['error' => 'Failed to mark attendance: ' . $e->getMessage()], 500);
+        }
     }
 
 

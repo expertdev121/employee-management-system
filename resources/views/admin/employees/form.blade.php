@@ -471,6 +471,44 @@
 
 
             <div class="form-row">
+                <!-- Social ID -->
+                <div class="form-group">
+                    <label for="social_id" class="form-label">Social ID</label>
+                    <input type="text"
+                           id="social_id"
+                           name="social_id"
+                           value="{{ old('social_id', $employee->social_id ?? '') }}"
+                           class="form-input @error('social_id') is-invalid @enderror"
+                           placeholder="Enter social ID">
+                    @error('social_id')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+
+
+                {{-- Placeholder for future field --}}
+                <div class="form-group">
+                    {{-- Empty for now --}}
+                </div>
+            </div>
+
+
+            <div class="form-row">
+                <!-- Full Address -->
+                <div class="form-group full-width">
+                    <label for="full_address" class="form-label">Full Address</label>
+                    <textarea id="full_address"
+                              name="full_address"
+                              class="form-textarea @error('full_address') is-invalid @enderror"
+                              placeholder="Enter full address">{{ old('full_address', $employee->full_address ?? '') }}</textarea>
+                    @error('full_address')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+
+            <div class="form-row">
                 <!-- Hourly Rate -->
                 <div class="form-group">
                     <label for="hourly_rate" class="form-label">
