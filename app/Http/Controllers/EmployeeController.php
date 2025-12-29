@@ -107,12 +107,15 @@ class EmployeeController extends Controller
             ->select('employee_shifts.*')
             ->paginate(15);
 
-        // Add can_accept flag to each shift - only for accepted shifts on current day
+        // Add can_accept flag to each shift
         foreach ($shifts as $shift) {
             $shift->can_accept = false;
 
-            // Only allow marking attendance for accepted shifts on current day
-            if ($shift->status === 'accepted') {
+            if (in_array($shift->status, ['pending', 'assigned'])) {
+                // Allow accepting pending and assigned shifts
+                $shift->can_accept = true;
+            } elseif ($shift->status === 'accepted') {
+                // Only allow marking attendance for accepted shifts on current day
                 $shiftDayOfWeek = $shift->shift_date ? $shift->shift_date->dayOfWeek : null;
                 $shiftDayName = $shiftDayOfWeek !== null ? $daysOfWeek[$shiftDayOfWeek] : null;
 
@@ -406,6 +409,65 @@ class EmployeeController extends Controller
             ]);
 
             return response()->json(['error' => 'Failed to mark attendance: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function markNotDone(Request $request, EmployeeShift $employeeShift)
+    {
+        if ($employeeShift->employee_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $currentDate = now()->toDateString();
+
+        try {
+            return DB::transaction(function () use ($employeeShift, $currentDate) {
+                // Check if attendance already exists for today
+                $existingAttendance = AttendanceLog::where('employee_id', $employeeShift->employee_id)
+                    ->where('attendance_date', $currentDate)
+                    ->first();
+
+                if ($existingAttendance) {
+                    return response()->json(['error' => 'Attendance already marked for today'], 400);
+                }
+
+                // Create attendance record with absent status for this shift
+                $shift = $employeeShift->shift;
+                if (!$shift) {
+                    return response()->json(['error' => 'Shift not found'], 404);
+                }
+
+                // Calculate shift duration in hours using Carbon
+                $startTime = Carbon::parse($shift->start_time);
+                $endTime = Carbon::parse($shift->end_time);
+
+                // Handle shifts that cross midnight
+                if ($endTime->lt($startTime)) {
+                    $endTime->addDay();
+                }
+
+                $totalMinutes = $endTime->diffInMinutes($startTime);
+                $totalHours = round($totalMinutes / 60, 2);
+
+                AttendanceLog::create([
+                    'employee_id' => $employeeShift->employee_id,
+                    'shift_id' => $shift->id,
+                    'attendance_date' => $currentDate,
+                    'total_hours' => 0, // No hours for absent
+                    'total_hours_minutes' => 0,
+                    'status' => 'absent',
+                    'is_manual_entry' => false,
+                ]);
+
+                return response()->json(['success' => 'Marked as not done for today']);
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to mark as not done', [
+                'employee_shift_id' => $employeeShift->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['error' => 'Failed to mark as not done: ' . $e->getMessage()], 500);
         }
     }
 

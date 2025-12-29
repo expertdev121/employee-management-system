@@ -84,6 +84,7 @@
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         overflow: hidden;
         transition: box-shadow 0.3s ease;
+        max-width: 100%;
     }
 
     .dashboard-card:hover {
@@ -94,11 +95,20 @@
         padding: 0;
     }
 
+    /* Table Wrapper */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+
     /* Table Styles */
     .custom-table {
         width: 100%;
+        max-width: 100%;
         border-collapse: separate;
         border-spacing: 0;
+        table-layout: fixed;
     }
 
     .custom-table thead th {
@@ -113,6 +123,12 @@
         border-bottom: 2px solid #e5e7eb;
         white-space: nowrap;
     }
+
+    /* Set specific column widths */
+    .custom-table thead th:nth-child(1) { width: 20%; }
+    .custom-table thead th:nth-child(2) { width: 25%; }
+    .custom-table thead th:nth-child(3) { width: 25%; }
+    .custom-table thead th:nth-child(4) { width: 30%; }
 
     .custom-table tbody td {
         padding: 1rem 1.25rem;
@@ -406,28 +422,28 @@
                         </td>
                         <td>
                             @if(in_array($shift->status, ['pending', 'assigned']) && $shift->can_accept)
-                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 0.5rem;">
                                 <button class="btn-action btn-action-primary accept-shift" data-shift-id="{{ $shift->id }}">
                                     <i class="fas fa-check"></i>
                                     <span>Done</span>
                                 </button>
-                                {{-- <button class="btn-action btn-action-danger reject-shift" data-shift-id="{{ $shift->id }}">
+                                <button class="btn-action btn-action-danger reject-shift" data-shift-id="{{ $shift->id }}">
                                     <i class="fas fa-times"></i>
                                     <span>Not Done</span>
-                                </button> --}}
+                                </button>
                             </div>
                             @elseif($shift->status === 'accepted')
                             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                                 @if($shift->can_accept)
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <div style="display: flex; gap: 0.5rem;">
                                     <button class="btn-action btn-action-primary mark-attendance" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
                                         <i class="fas fa-check"></i>
                                         <span>Done Today</span>
                                     </button>
-                                    {{-- <button class="btn-action btn-action-danger mark-not-done" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                    <button class="btn-action btn-action-danger mark-not-done" data-shift-id="{{ $shift->id }}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
                                         <i class="fas fa-times"></i>
                                         <span>Not Done</span>
-                                    </button> --}}
+                                    </button>
                                 </div>
                                 @else
                                 <span class="badge-custom badge-success">Done</span>
