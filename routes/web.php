@@ -135,6 +135,7 @@ Route::middleware(['auth', 'role:employee'])->group(function () {
     Route::post('/employee/shifts/{employeeShift}/accept', [EmployeeController::class, 'acceptShift'])->name('employee.shifts.accept');
     Route::post('/employee/shifts/{employeeShift}/reject', [EmployeeController::class, 'rejectShift'])->name('employee.shifts.reject');
     Route::post('/employee/shifts/{employeeShift}/mark-attendance', [EmployeeController::class, 'markAttendance'])->name('employee.shifts.mark-attendance');
+    Route::post('/employee/shifts/{employeeShift}/mark-not-done', [EmployeeController::class, 'markNotDone'])->name('employee.shifts.mark-not-done');
     Route::get('/employee/attendance', [EmployeeController::class, 'attendance'])->name('employee.attendance.index');
     Route::get('/employee/payroll', [EmployeeController::class, 'payroll'])->name('employee.payroll.index');
     Route::get('/employee/requests', [EmployeeController::class, 'requests'])->name('employee.requests.index');
